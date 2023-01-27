@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan  6 20:26:53 2023
+
+@author: thomasbaycroft
+"""
+import numpy as np
+
+def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4):
+    '''
+    Takes inputs:
+        posteriors: dataframe of the posteriors in which we are looking for peaks
+        var: str; the variable we are finding the peak in
+        maxlivars: list of floats; the values for var for each planet in the maximum likelihood solution
+        numpl: number of planets
+        sensitivity: a scaling factor for sensitivity to peaks, if higher then we go wider around 
+        peaks and allow shallower ones, but risk blurring them
+    this function forms a histogram of the variable, identifies bins that are above a certain 
+    threshold and groups them into 'peaks' it then identifies which peak is associated with each 
+    solution and returns:
+        indices: list of lists, for each planet there is a list of booleans indicating if each 
+        posterior sample in 'posteriors' has a planet belonging to the corresponding 'peak'
+    '''
+    
+    indices = []
+    for i in range(numpl):
+        maxliind = np.argmax(posteriors['logL'])
+        maxlivar = posteriors[var][maxliind]
+        
+        hist = np.histogram(posteriors[var],bins=np.logspace(np.log10(min(posteriors[var])),np.log10(max(posteriors[var])),50))
+        isinpeak = np.r_[hist[0]>=-1+np.mean(hist[0])/sensitivity,np.array([0])]
+        inpeak,lowers,uppers = False,[],[]
+        for i,val in enumerate(isinpeak):
+            if val==1 and inpeak==False:
+                lowers.append(hist[1][i])
+                inpeak = True
+            elif val==0 and inpeak:
+                uppers.append(hist[1][i])
+                inpeak=False
+        for i in range(len(lowers)):
+            if lowers[i]<=maxlivar<=uppers[i]:
+                lower, upper = lowers[i],uppers[i]       
+        
+        indices.append(np.logical_and(posteriors[var]<=upper,posteriors[var]>=lower))
+    
+    return indices
