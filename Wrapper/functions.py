@@ -206,7 +206,7 @@ def masses(SB2,K,P,e,M1=1,q=1):
     mass is calculated, relative to the primary
     '''    
     if SB2:
-        mass_func = (P*24*3600)*K**3*(1-e**2)**(3/2)/2/np.pi/G
+        mass_func = (P*24*3600)*(K/q)**3*(1-e**2)**(3/2)/2/np.pi/G
         M1 = (mass_func*(1+q)**2)/Ms
         M2 = M1*q
     else:
@@ -257,10 +257,10 @@ def get_mass(K,M0,P,e):
     # print(K)
     for i in range(K.size):
         a = 0
-        b = M0[i]
-        c = M0[i]/2
+        b = 2*M0[i]
+        c = b/2
         eps = semi_amplitude(M0[i],b,P[i],e[i]) - semi_amplitude(M0[i],a,P[i],e[i])
-        while eps>0.01 or eps < -0.01: 
+        while eps>0.000000001 or eps < -0.0000000001: 
             c = (b+a)/2
             x = K[i] - semi_amplitude(M0[i],c,P[i],e[i])
             if x < 0:
@@ -270,9 +270,25 @@ def get_mass(K,M0,P,e):
             eps = semi_amplitude(M0[i],b,P[i],e[i]) - semi_amplitude(M0[i],a,P[i],e[i])
         M.append(c)
     return M
-# def get_mass(K,M,P,e):
+
+def get_mass_scp(K,M0,P,e):
+    '''
+    Root finder for the Mass of a body, given:
+        M0: Central mass (M_sun)
+        K: semi-amplitude (m/s)
+        P: Period (days)
+        e: eccentricity
+    Uses scipy.optimize.root
+    '''
     
-#     M2 = sp.optimize.root(semi_amplitude())
+    def fun(M2):
+        return semi_amplitude(M0,M2,P,e) - K    
+    Mass = sp.optimize.root(fun,M0)
+    if Mass.message != 'The solution converged.':
+        print('Warning: Mass not conerged with message',Mass.message)
+    return Mass.x[0]
+
+    
 def get_K2(K1, M, P, ecc):
     '''
     Newton-raphson root finder for get the semi-amplitude that one would get from Body 2 give:
