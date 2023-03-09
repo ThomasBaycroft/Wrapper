@@ -7,7 +7,7 @@ Created on Fri Jan  6 20:26:53 2023
 """
 import numpy as np
 
-def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4):
+def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
     '''
     Takes inputs:
         posteriors: dataframe of the posteriors in which we are looking for peaks
@@ -23,13 +23,24 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4):
         posterior sample in 'posteriors' has a planet belonging to the corresponding 'peak'
     '''
     
+    
     indices = []
     for i in range(numpl):
-        maxliind = np.argmax(posteriors['logL'])
-        maxlivar = posteriors[var][maxliind]
+        if pre_index != None:
+            posteriors = posteriors[pre_index[i]]
+        # maxliind = np.argmax(posteriors['logL'])
+        # maxlivar = posteriors[var][maxliind]
+        maxlivar = float(maxlivars[i])
+        lower,upper = min(posteriors[var]),max(posteriors[var])
         
-        hist = np.histogram(posteriors[var],bins=np.logspace(np.log10(min(posteriors[var])),np.log10(max(posteriors[var])),50))
+        number=50
+        hist = np.histogram(posteriors[var],bins=np.logspace(np.log10(min(posteriors[var])),np.log10(max(posteriors[var])),number))
         isinpeak = np.r_[hist[0]>=-1+np.mean(hist[0])/sensitivity,np.array([0])]
+        if sum(isinpeak)>=number*2/3:
+            print(str(var)+' peak too wide, decreasing sensitivity')
+            hist = np.histogram(posteriors[var],bins=np.logspace(np.log10(min(posteriors[var])),np.log10(max(posteriors[var])),number))
+            isinpeak = np.r_[hist[0]>=-1+np.mean(hist[0]),np.array([0])]
+            
         inpeak,lowers,uppers = False,[],[]
         for i,val in enumerate(isinpeak):
             if val==1 and inpeak==False:
@@ -40,8 +51,12 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4):
                 inpeak=False
         for i in range(len(lowers)):
             if lowers[i]<=maxlivar<=uppers[i]:
-                lower, upper = lowers[i],uppers[i]       
+                lower, upper = lowers[i],uppers[i]   
         
-        indices.append(np.logical_and(posteriors[var]<=upper,posteriors[var]>=lower))
+        ind = np.logical_and(posteriors[var]<=upper,posteriors[var]>=lower)
+        if pre_index == None:
+            indices.append(ind)
+        else:
+            indices.append(np.logical_and(ind,pre_index[i]))
     
     return indices

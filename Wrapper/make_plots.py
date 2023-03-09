@@ -33,7 +33,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     
     sec_fill = False
     
-    num = pri_data_list[0].num_bodies +1
+    num = pri_data_list[0].num_bodies #+1
     fig, ax = plt.subplots(num,1,tight_layout=True,figsize=(6,num*8))
     tot_phas = []
     tot_rv = []
@@ -70,7 +70,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
         
     plot_rv_phase_binned(ax[1],np.array(tot_phas),np.array(tot_rv))
    
-    plt.show()
+    return fig, ax
 
 def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='grey',inflate_errors=False,bin_phase=False):
     '''
@@ -97,7 +97,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
     else:
         erbars = data.svrad
     
-    times = np.linspace(min(data.bjds),max(data.bjds),2000)
+    times = np.linspace(min(data.bjds),max(data.bjds),10000)
     if body == 'binary':
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_binary()/1000)
         ax.errorbar(orb.phase(data.bjds),data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
@@ -109,38 +109,46 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
             ax.plot(np.sort(orb.phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))]/1000,c='grey',alpha=0.6)
             ax.plot(np.sort(orb.phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))]/1000,c='grey',alpha=0.6)
         ax.axhline(0,c='grey',ls='--')
-        ax.set(xlim=[-0.1,1.1],ylabel='RV (km/s)')
-        
-    elif body == 'residuals_long':
-        sub = 2450000
-        ax.errorbar(data.bjds-sub,data.residuals(),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(data.bjds-sub,data.residuals(),fmt='.',c=colour,mfc=fc)
+        ax.set(xlim=[-0.1,1.1])#,ylabel=r'RV (km s$^{-1}$)')
+    elif body == 'binary_unphased':
+        sub = 2400000
+        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
+        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,fmt='.',c=colour,mfc=fc)
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
-        ax.set(ylabel = 'Residuals (m/s)',xlabel='Time (bjd-'+str(sub)+')')
+            ax.plot(times-sub,orb.RV_keplerian_add(times)/1000,c=colour,alpha=0.7)
+        ax.set(ylabel=r'RV km s$^{-1}$')
+    elif body == 'residuals_unphased':
+        sub = 2400000
+        ax.errorbar(data.bjds-sub,data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
+        ax.errorbar(data.bjds-sub,data.residuals()/1000,fmt='.',c=colour,mfc=fc)
+        if lines:
+            ax.axhline(0,c='black',alpha=0.6)
+        m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
+        ax.set(ylim=[-m,m],ylabel = 'Residuals')#,xlabel='Time (bjd-'+str(sub)+')')
         
     elif body == 'residuals':
-        ax.errorbar(orb.phase(data.bjds),data.residuals(),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(orb.phase(data.bjds),data.residuals(),fmt='.',c=colour,mfc=fc)
-        ax.errorbar(orb.phase(data.bjds)-1,data.residuals(),yerr=erbars,fmt='.',c='grey',alpha=0.6)
-        ax.errorbar(orb.phase(data.bjds)+1,data.residuals(),yerr=erbars,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(orb.phase(data.bjds),data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
+        ax.errorbar(orb.phase(data.bjds),data.residuals()/1000,fmt='.',c=colour,mfc=fc)
+        ax.errorbar(orb.phase(data.bjds)-1,data.residuals()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(orb.phase(data.bjds)+1,data.residuals()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
-        ax.set(xlim=[-0.1,1.1],ylabel='Res (m/s)')
+        m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
+        ax.set(xlim=[-0.1,1.1],ylim=[-m,m])#,ylabel=r'res (km s$^{-1}$)')#,xlabel='phase')
         
     else:
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_planet(body))
-        ax.errorbar(orb.phase(data.bjds),data.rv_curve_planet(body),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(orb.phase(data.bjds),data.rv_curve_planet(body),fmt='.',c=colour,mfc=fc,alpha=1.,markersize=7.)
-        ax.errorbar(orb.phase(data.bjds)-1,data.rv_curve_planet(body),yerr=erbars,fmt='.',c='grey',alpha=0.6)
-        ax.errorbar(orb.phase(data.bjds)+1,data.rv_curve_planet(body),yerr=erbars,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(orb.phase(data.bjds),data.rv_curve_orbit(orb),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
+        ax.errorbar(orb.phase(data.bjds),data.rv_curve_orbit(orb),fmt='.',c=colour,mfc=fc,alpha=1.,markersize=7.)
+        ax.errorbar(orb.phase(data.bjds)-1,data.rv_curve_orbit(orb),yerr=erbars,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(orb.phase(data.bjds)+1,data.rv_curve_orbit(orb),yerr=erbars,fmt='.',c='grey',alpha=0.6)
         if lines:
             ax.plot(np.sort(orb.phase(times)),orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))],c='black',alpha=0.6)
             ax.plot(np.sort(orb.phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))],c='grey',alpha=0.6)
             ax.plot(np.sort(orb.phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))],c='grey')
         ax.axhline(0,c='grey',ls='--')
-        ax.set(xlim=[-0.1,1.1],ylabel='RV (m/s)',ylim=[-200,200])#,ylim=[min(data.rv_curve_planet(body))-5,max(data.rv_curve_planet(body))+5])
-
+        ax.set(xlim=[-0.1,1.1],ylabel=r'RV (m s$^{-1}$)')
 def plot_rv_phase_binned(ax,phase,rvdata,numbins=10,mark='8',colour='black'):
     
     phase = np.array(phase)
@@ -158,7 +166,7 @@ def plot_rv_phase_binned(ax,phase,rvdata,numbins=10,mark='8',colour='black'):
     ax.errorbar(xax,points,xerr=xerrs,yerr=errs,fmt=mark,c=colour,mfc='none',markersize=10.,markeredgewidth=1.3)
                                  
 
-def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys',detlim_col='purple',numbins=50,lowlim=-1,uplim=None):
+def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys',detlim_col='purple',numbins=50,lowlim=-1,uplim=None,label=''):
     '''
     plots detection limit give:
         ax: object on which to plot
@@ -180,19 +188,22 @@ def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys'
             uplim = np.log10(max(posterior_file[KM]*mult))
             lowlim = 0.
     
-    bincentres, KM99s, p_bins = make_detection_limit(posterior_file,numbins,KM=KM,lowlim=lowlim)
+    if label=='':
+        label = '99% confidence detection limit'
+    
+    bincentres, KM99s, p_bins, histvals = make_detection_limit(posterior_file,numbins,KM=KM,lowlim=lowlim)
     
     if uplim == None:
         uplim = np.log10(max(posterior_file[KM]))
-    
-    ax.hexbin(posterior_file['P'],posterior_file[KM]*mult,xscale='log',bins='log',yscale='log', cmap=colourmap,alpha=0.65, gridsize=numbins+1, lw=0, mincnt=1,extent=(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),lowlim,uplim))
-    ax.plot(bincentres,KM99s*mult,c=detlim_col,label='99% confidence detection limit')
-    
+    ax.plot(bincentres,KM99s*mult,c=detlim_col,label=label)
     xax = np.array([min(posterior_file['P']),max(posterior_file['P'])])
-    if KM == 'K':
-        Masses, names = [80*Mj/Ms,13*Mj/Ms,Mj/Ms,Msat/Ms,Mn/Ms,2*Me/Ms,Me/Ms],['Stellar_limit','Brown-dwarf limit','Jupiter','Saturn','Neptune','2xEarth','Earth']
-        for i, mass in enumerate(Masses):
-            plot_planet_line(ax,M_central,mass,xax,text=names[i])
+    if colourmap!=None:
+        ax.hexbin(posterior_file['P'],posterior_file[KM]*mult,xscale='log',bins='log',yscale='log', cmap=colourmap,alpha=0.65, gridsize=numbins+1, lw=0, mincnt=1,extent=(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),lowlim,uplim))
+    
+        if KM == 'K':
+            Masses, names = [80*Mj/Ms,13*Mj/Ms,Mj/Ms,Msat/Ms,Mn/Ms,2*Me/Ms,Me/Ms],['Stellar_limit','Brown-dwarf limit','Jupiter','Saturn','Neptune','2xEarth','Earth']
+            for i, mass in enumerate(Masses):
+                plot_planet_line(ax,M_central,mass,xax,text=names[i])
             
     ax.set(xlim=xax,ylim=[10**lowlim,10**uplim],xlabel='Period (days)',ylabel=ylab)
     
@@ -208,6 +219,7 @@ def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1):
     if KM != 'K':
         KM = 'M_pl_'
     p_bins = np.histogram(posterior_file['P'],bins=np.logspace(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),numbins+1))[1]
+    histvals = np.histogram(posterior_file['P'],bins=np.logspace(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),numbins+1))[0]
     KM99s=[]
     bincentres=[]
     for i in range(numbins):
@@ -219,7 +231,7 @@ def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1):
         
     # df = pd.DataFrame(np.array([bincentres,KM99s]).T,columns=['P','Detlim_'+KM])
     # df.to_csv('Detection_limit_'+KM+'.csv',index=False)
-    return bincentres, np.array(KM99s), p_bins
+    return bincentres, np.array(KM99s), p_bins, histvals
 
 def plot_planet_line(ax,M0,Mp,xax,text='',colour='black',M0p=None,M0m=None):
     '''
@@ -248,7 +260,7 @@ def plot_detlim_lines(ax,loc,KM='K'):
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
     
-    xax, detlim, pbins = mplt.make_detection_limit(posteriors_single,20,KM=KM)
+    xax, detlim, pbins, hvals = mplt.make_detection_limit(posteriors_single,20,KM=KM)
     
     ax.plot(xax,detlim,label=loc)
     

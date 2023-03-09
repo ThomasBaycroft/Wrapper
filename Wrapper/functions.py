@@ -19,6 +19,8 @@ AU = constants.au.value
 Me = constants.M_earth.value
 
 #################################################
+#Radial Velocity functions
+#################################################
 
 def keplerian(time, p, k, ecc, omega, t0, vsys):
     '''
@@ -335,6 +337,10 @@ def f_dash_M(K, M0, M1, P, ecc):
     
     return f_dash_1 - f_dash_2
 
+#################################################
+#Orbital element functions
+#################################################
+
 def sma_tot(P,M0,M1=0):
     '''
     Calculates the semi-major axis of an orbit given:
@@ -370,6 +376,7 @@ def P_from_sma(a,M0,M1=0):
     '''
     return ((a*AU)**3*4*pi**2/G/(M0+M1)/Ms)**(1/2)/24/3600
 
+
 #################################################
 #Calculation of wdot, the apsidal precession rate, due the dynamics of a 3rd body,
 #the rotational effect and due to GR (in the assumtion of an eclipsing binary and a
@@ -383,10 +390,10 @@ def wdot_dyn(M0,M1,M2,e1,e2,P1,P2,w1,inc):
         M0: Mass of primary (M_sun)
         M1: Mass of secondary (M_sun)
         M2: Mass of perturber (M_sun)
-        e1: eccentricity of outer orbit
-        e2: eccentricity of inner orbit
-        P1: orbital period of outer orbit (days)
-        P2: orbital period of inner orbit (days)
+        e1: eccentricity of inner orbit
+        e2: eccentricity of outer orbit
+        P1: orbital period of inner orbit (days)
+        P2: orbital period of outer orbit (days)
         w1: argument of pericentre of inner orbit (radians)
         inc: mutual inclination between orbits, i.e. inclination to line 
         of sight of outer orbit for an eclipsing binary (radians) 
@@ -417,8 +424,8 @@ def wdot_rot(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1):
     rotational effects given:
         M0: Mass of primary (M_sun)
         M1: Mass of secondary (M_sun)
-        e1: eccentricity of outer orbit
-        P1: orbital period of outer orbit (days)
+        e1: eccentricity of inner orbit
+        P1: orbital period of inner orbit (days)
         k0: second Love number for the primary body
         k1: second Love number for the secondary body
         Omega0: rotation rate of primary body (rad/s)
@@ -452,8 +459,8 @@ def wdot_GR(M0,M1,e1,P1):
     Calculate the rate of apsidal precession of an orbit due to GR given:
         M0: Mass of primary (M_sun)
         M1: Mass of secondary (M_sun)
-        e1: eccentricity of outer orbit
-        P1: orbital period of outer orbit (days)
+        e1: eccentricity of inner orbit
+        P1: orbital period of inner orbit (days)
     Returns rate of precession in arcsec/yr
     '''
     
@@ -471,13 +478,63 @@ def wdot_GR(M0,M1,e1,P1):
     
     return wdot
 
+def wdot_Tid(M0,M1,e1,P1,k0,k1,R0,R1):
+    '''
+    Caluclate rate of apsidal precession of an orbit due to tides given:
+        M0: Mass of primary (M_sun)
+        M1: Mass of secondary (M_sun)
+        e: eccentricity of inner orbit
+        P: orbital period of inner orbit (days)
+        k0: second Love number for the primary body
+        k1: second Love number for the secondary body
+        R0: Radius of primary (R_sun)
+        R1: Radius of secondary (R_sun)
+    '''
+    a1 = sma_tot(P1,M0,M1)*AU
+    
+    m0 = M0*Ms
+    m1 = M1*Ms
+    r0 = R0*Rs
+    r1 = R1*Rs
+    
+    Ct0 = 0.5*k0*G*m1**2*r0**5/(a1**6)
+    Ct1 = 0.5*k1*G*m0**2*r1**5/(a1**6)
+    
+    fce = (1 + (3*e1**2)/2 + (e1**4)/8)*(1-e1**2)**(-9/2)
+    G1 = m0*m1/(m0+m1)*(G*(m0+m1)*a1*(1-e1**2))**(1/2)
+    
+    wdot = 15*(Ct0 + Ct1)*fce/G1
+    wdot *= 3600*24*365.25*180*3600/np.pi
+    
+    return wdot
+
+def wdot_Tid_rad(M1,M2,e,P,k2_1,k2_2,R1,R2):
+    '''
+    Caluclate precession from tides (taken from Ragozzine & Wolf 2009) give:
+        M0: Mass of primary (M_sun)
+        M1: Mass of secondary (M_sun)
+        R1: Radius of primary (R_sun)
+        R2: Radius of secondary (R_sun)
+        e: eccentricity of inner orbit
+        k2_1: second Love number for the primary body
+        k2_2: second Love number for the secondary body
+        P: orbital period of inner orbit (days)
+    '''
+    n = 2*np.pi*365.25/P
+    a = sma_tot(P, M1,M2)*AU/Rs
+    f2e = (1-e**2)**(-5)*(1+3/2*e**2+1/8*e**4)
+    wdottid1 = 7.5*k2_1*(R1/a)**5*M2/M1*f2e*n
+    wdottid2 = 7.5*k2_2*(R2/a)**5*M1/M2*f2e*n
+    
+    return (wdottid1 + wdottid2)*3600*180/np.pi
+
 def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
     
 
     wdot -= wdot_GR(M0,M1,e1,P1)
     
     m0 = 0.000000001
-    m1 = 10
+    m1 = 10000
     wd0 = wdot_dyn(M0,M1,m0,e1,e2,P1,P2,w1,inc)
     wd1 = wdot_dyn(M0,M1,m1,e1,e2,P1,P2,w1,inc)
     Dwd = wd1 - wd0
@@ -494,6 +551,130 @@ def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
         Dwd = wd1 - wd0
 
     return m2
+
+def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
+    '''
+    Root finder for the Mass of a body from precession of inner binary, given:
+        M0: Central mass (M_sun)
+        K: semi-amplitude (m/s)
+        P: Period (days)
+        e: eccentricity
+    Uses scipy.optimize.root
+    '''
+    M0,M1,e1,e2,P1,P2,w1,inc,wdot = np.atleast_1d(M0,M1,e1,e2,P1,P2,w1,inc,wdot)
+    if len(e2)<len(M0):
+        e2 = np.ones(len(M0))*e2[0]
+    if len(e1)<len(M0):
+        e1 = np.ones(len(M0))*e1[0]
+    if len(inc)<len(M0):
+        inc = np.ones(len(M0))*inc[0]
+    if len(P2)<len(M0):
+        P2 = np.ones(len(M0))*P2[0]
+
+    masses=[]
+    for i in range(len(M0)):
+        def fun(m0):
+            xxx = wdot_dyn(M0[i],M1[i],m0,e1[i],e2[i],P1[i],P2[i],w1[i],inc[i]) - wdot[i] + wdot_GR(M0[i],M1[i],e1[i],P1[i])+3.7
+            # print(xxx)
+            return xxx
+        Mass = sp.optimize.root(fun,0.01)
+        masses.append(Mass.x[0])
+        # print(Mass.x)
+    if Mass.message != 'The solution converged.':
+        print('Warning: Mass not conerged with message',Mass.message)
+        
+    if len(masses)>=2:
+        ret = masses
+    else:
+        ret = masses[0]
+    return ret
+
+#################################################
+#astrometry functions
+#################################################
+
+def vtan(M0,M1,P):
+    a0,a1=sma_2body(P,M0,M1)
+    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    return v_circ*M1/M0
+
+def vtan2(M0,M1,atot):
+    a1 = atot*M0/(M0+M1)
+    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    return v_circ*M1/M0
+
+#################################################
+#ETV funtions
+#################################################
+
+def semi_amp_LTTE(P,M0,M1,inc=np.pi/2):
+    '''
+    Calculate semi-amplitude of ETV signal given:
+        P: Period (days)
+        M0: Mass of eclipsing binery (M_sun)
+        M1: Mass of perturbing body (M_sun)
+    '''
+    M_tot = (M0+M1)*Ms
+    m = M1*Ms
+    Period = P*24*3600
+    
+    return m/M_tot/c*(G*M_tot/4/(np.pi**2))**(1/3)*Period**(2/3)
+
+def get_LTTE_mass_scp(K,M0,P):
+    '''
+    Root finder for the Mass of a body, given:
+        M0: Central mass (M_sun)
+        K: semi-amplitude (m/s)
+        P: Period (days)
+        e: eccentricity
+    Uses scipy.optimize.root
+    '''
+    
+    def fun(M2):
+        return semi_amp_LTTE(P,M0,M2) - K    
+    Mass = sp.optimize.root(fun,M0)
+    if Mass.message != 'The solution converged.':
+        print('Warning: Mass not conerged with message',Mass.message)
+    return Mass.x[0]
+
+def ET_wdot_mass(ephem1,P,M0,M1,e1,P2,w1,e2=0):
+    wdot = (360/(P/365.25))*3600    
+
+    return planet_mass(M0,M1,e1,e2,ephem1,P2,w1,0,wdot)
+
+def keplerian_etv(epoch, ephem1, p, k, ecc, omega, t0):
+    '''
+    Obtains the eclipse time variations due to a keplerain orbit for an array of times time, given 
+    Period P, semi-amplitude k (in seconds), eccentricity ecc, argument of pericentre omega, time of 
+    preicentre passage t0 and systemic velocity vsys.
+    Returns the array (same size as time) of radial velocities
+    '''
+    time = epoch*ephem1
+    et = np.zeros_like(time)
+    p, k, ecc, omega, t0 = np.atleast_1d(p, k, ecc, omega, t0)
+
+    with np.errstate(divide='raise'):
+        for i in range(p.size):
+            M = 2.*pi * (time-t0[i]) / p[i]
+            E = ecc_anomaly(M, ecc[i])
+            nu = true_anomaly(E, ecc[i])
+            et += k[i]/(24*3600) * ((1-ecc[i]**2)/(1+ecc[i]*np.cos(nu))*np.sin(omega[i]+nu)+ ecc[i]*np.sin(omega[i])) * (1 - (ecc[i]*np.cos(omega[i]))**2)
+    return et
+
+def ephem_etv(epoch, ref_T, ephem1,  ephem2=0, ephem3=0):
+    '''
+    Obtains the eclipse time variations from up to a cubic ephemeris given:
+        epoch: array of eclipse epochs
+        ref_T: reference time for epoch 0
+        ephem1,2,3 linear quadratic and cubic terms for the ephemeris (these 
+        are the Period of the binary/planet and its first and second derivatives)
+    '''
+    
+    et = np.ones_like(epoch)*ref_T
+    et += epoch*ephem1 +(ephem2*ephem1*epoch**2)/2 + (ephem3*ephem1**2*epoch**3)/6
+    
+    return et
+
 
 #################################################
 #other functions
