@@ -24,9 +24,14 @@ Me = constants.M_earth.value
 
 def keplerian(time, p, k, ecc, omega, t0, vsys):
     '''
-    Obtains the radial velocity due to a keplerain orbit for an array of times time, given 
-    Period P, semi-amplitude k, eccentricity ecc, argument of pericentre omega, time of 
-    preicentre passage t0 and systemic velocity vsys.
+    keplerian function given:
+        time: array of times
+        p: Period (float or array of floats)
+        k:semi-amplitude (float or array of floats)
+        ecc:eccentricity (float or array of floats)
+        omega: argument of pericentre (float or array of floats)
+        t0: time of pericentre passage (float or array of floats)
+        vsys: systemic velocity (float)
     Returns the array (same size as time) of radial velocities
     '''
     vel = np.zeros_like(time)
@@ -42,9 +47,15 @@ def keplerian(time, p, k, ecc, omega, t0, vsys):
     return vel
 
 def true_anomaly(E, e):
+    '''
+    calculate true anomaly from the eccentric anomaly
+    '''
     return 2. * np.arctan( np.sqrt((1.+e)/(1.-e)) * np.tan(E/2.))
 
 def ecc_anomaly(M, e):
+    '''
+    calculate the eccentric anomaly from the mean anomaly
+    '''
     M = np.atleast_1d(M)
     E0 = M; E = M
     for _ in range(200):
@@ -90,8 +101,15 @@ def phase(t, P, T0, phi_max=1):
 
 def keplerian_plus(time, p, k, ecc, omega, omdot, t0, vsys):
     '''
-    Extension of the keplerian function allowing for linearapsidal precession of the orbit
-    requires an extra input, the rate of apsidal precession omdot
+    keplerian function with a linear apsidal precession rate term added, given:
+        time: array of times
+        p: Period (float or array of floats)
+        k:semi-amplitude (float or array of floats)
+        ecc:eccentricity (float or array of floats)
+        omega: argument of pericentre (float or array of floats)
+        omdot: rate of change of omega (float or array of floats)
+        t0: time of pericentre passage (float or array of floats)
+        vsys: systemic velocity (float)
     '''
     vel = np.zeros_like(time)
     p, k, ecc, omega, omdot, t0 = np.atleast_1d(p, k, ecc, omega, omdot, t0)
@@ -110,10 +128,19 @@ def keplerian_plus(time, p, k, ecc, omega, omdot, t0, vsys):
 
 def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, relativistic_correction, tidal_correction):
     '''
-    Extension to keplerian_plus which includes relativistic and tidal correction, requires
-    additional inputs of the Massas of the two bodies, M0 and M1 the radius of the observed 
-    body (needed for the tidal correction) and boolians for where to do the relativisdtic and/or
-    the tidal corrections.
+    RV keplerian function with a linear apsidal precession term added and the option to include relativistic and tidal corrections, given:
+        time: array of times
+        p: Period (float or array of floats)
+        k:semi-amplitude (float or array of floats)
+        ecc:eccentricity (float or array of floats)
+        omega: argument of pericentre (float or array of floats)
+        omdot: rate of change of omega (float or array of floats)
+        t0: time of pericentre passage (float or array of floats)
+        vsys: systemic velocity (float)
+        M0, R0: Mass and Radius of primary body (on which RV data is obtained) (floats)
+        M1: Mass of secondary body (float)
+        relativistic_correction: flag to turn on relativistic correction (bool)
+        tidal_correction: flag to turn on Tidal correction (bool)
     '''
     vel = np.zeros_like(time)
     p, k, ecc, omega, omdot, t0 = np.atleast_1d(p, k, ecc, omega, omdot, t0)
@@ -134,7 +161,7 @@ def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, rela
 
 def post_newtonian(K0, nu, ecc, w, P, M0, R0, M1, relativistic_correction, tidal_correction):
     '''
-    Calculates the relativistic and tidal corrections to the radial velocity
+    Calculates the post-newtonian contributions as in Baycroft et. al 2023
     '''
     sini = 1
     v = 0.0
@@ -642,14 +669,14 @@ def ET_wdot_mass(ephem1,P,M0,M1,e1,P2,w1,e2=0):
 
     return planet_mass(M0,M1,e1,e2,ephem1,P2,w1,0,wdot)
 
-def keplerian_etv(epoch, ephem1, p, k, ecc, omega, t0):
+def keplerian_etv(epoch, ref_T, ephem1, p, k, ecc, omega, t0):
     '''
     Obtains the eclipse time variations due to a keplerain orbit for an array of times time, given 
     Period P, semi-amplitude k (in seconds), eccentricity ecc, argument of pericentre omega, time of 
     preicentre passage t0 and systemic velocity vsys.
     Returns the array (same size as time) of radial velocities
     '''
-    time = epoch*ephem1
+    time = epoch*ephem1 +ref_T
     et = np.zeros_like(time)
     p, k, ecc, omega, t0 = np.atleast_1d(p, k, ecc, omega, t0)
 
@@ -658,7 +685,7 @@ def keplerian_etv(epoch, ephem1, p, k, ecc, omega, t0):
             M = 2.*pi * (time-t0[i]) / p[i]
             E = ecc_anomaly(M, ecc[i])
             nu = true_anomaly(E, ecc[i])
-            et += k[i]/(24*3600) * ((1-ecc[i]**2)/(1+ecc[i]*np.cos(nu))*np.sin(omega[i]+nu)+ ecc[i]*np.sin(omega[i])) * (1 - (ecc[i]*np.cos(omega[i]))**2)
+            et += k[i]/(24*3600) * ((1-ecc[i]**2)/(1+ecc[i]*np.cos(nu))*np.sin(omega[i]+nu)+ ecc[i]*np.sin(omega[i])) * (1 - (ecc[i]*np.cos(omega[i]))**2)**(-0.5)
     return et
 
 def ephem_etv(epoch, ref_T, ephem1,  ephem2=0, ephem3=0):
@@ -674,6 +701,8 @@ def ephem_etv(epoch, ref_T, ephem1,  ephem2=0, ephem3=0):
     et += epoch*ephem1 +(ephem2*ephem1*epoch**2)/2 + (ephem3*ephem1**2*epoch**3)/6
     
     return et
+
+# def precession_etv(epoch, )
 
 
 #################################################

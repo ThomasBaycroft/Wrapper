@@ -27,11 +27,11 @@ class ET_planets():
         self.planet_orbits = []
         
         
-    def add_epehmeris(self,ephem1,ephem2=0,ephem3=0):
+    def add_ephemeris(self,ephem1,ephem2=0,ephem3=0):
         
-        self.ephem1 = ephem1
-        self.ephem2 = ephem2
-        self.ephem3 = ephem3
+        self.ephem1 = float(ephem1)
+        self.ephem2 = float(ephem2)
+        self.ephem3 = float(ephem3)
     
     def add_keplerians(self, numpl,params):
         
@@ -39,26 +39,26 @@ class ET_planets():
         self.num_bodies += numpl
         
         for i in range(numpl):
-            self.planet_orbits.append(et_orbit(params[['P'+str(i),'K'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i)]].values.tolist()[0],self.ephem1))
+            self.planet_orbits.append(et_orbit(params[['P'+str(i),'K'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i)]].values.tolist()[0],self.ephem1,self.ref_T))
             
     def remove_ephems_from_data(self,values):
         
         return values- fcs.ephem_etv(self.Epoch, self.ref_T, self.ephem1,self.ephem2,self.ephem3)
     
-    def remove_orbit_from_data(self,orbit,values=None,epochs=None):
+    def remove_orbit_from_data(self,orbit,values=[],epochs=[]):
         
-        if epochs==None:
+        if len(epochs)==0:
             epochs = self.Epoch
-        if values == None:
+        if len(values) == 0:
             values = self.T0
         
         return values - orbit.ET_Keplerian(epochs)
     
-    def add_orbit_to_data(self,orbit,values=None,epochs=None):
+    def add_orbit_to_data(self,orbit,values=[],epochs=[]):
         
-        if epochs==None:
+        if len(epochs)==0:
             epochs = self.Epoch
-        if values == None:
+        if len(values) == 0:
             values = self.T0
         
         return values + orbit.ET_Keplerian(epochs)
@@ -82,7 +82,7 @@ class ET_planets():
 
 class et_orbit():
     
-    def __init__(self,params,ephem1):
+    def __init__(self,params,ephem1,ref_T):
         
         self.P = params[0]
         self.K = params[1]
@@ -91,11 +91,12 @@ class et_orbit():
         self.w =params[4]
         
         self.ephem1 = ephem1
+        self.ref_T = ref_T
         
         
     def ET_Keplerian(self, epochs):
         
-        return fcs.keplerian_etv(epochs, self.ephem1, self.P, self.K, self.ecc, self.w, self.Tper)
+        return fcs.keplerian_etv(epochs, self.ref_T, self.ephem1, self.P, self.K, self.ecc, self.w, self.Tper)
     
     def phase(self, epochs):
         
