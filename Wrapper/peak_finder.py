@@ -7,6 +7,8 @@ Created on Fri Jan  6 20:26:53 2023
 """
 import numpy as np
 
+
+
 def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
     '''
     Takes inputs:
