@@ -123,7 +123,7 @@ def combine_planets(posterior_file,maxNp,numpl,columns_of_planetary_interest):
         final = pd.concat([dataframes[i] for i in range(numpl)], ignore_index=True,names=final_cols)   
     else:
         final = posterior_file[posterior_file.Np==0]
-        final = pd.concat([final],ignore_index=True)
+        final = pd.concat([final],ignore_index=True) 
     
     return final
 
