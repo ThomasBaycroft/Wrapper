@@ -127,6 +127,9 @@ def combine_planets(posterior_file,maxNp,numpl,columns_of_planetary_interest):
     
     return final
 
+# def restrict_planets(posterior_file,manNp,numpl,,columns_of_planetary_interest):
+    
+
 def centre_angles(posts):
     hist = np.histogram(posts,bins=np.linspace(0,2*np.pi,100))
     x = sum(hist[0][:3])+sum(hist[0][-3:])

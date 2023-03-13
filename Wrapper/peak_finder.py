@@ -27,6 +27,8 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
     indices = []
     for i in range(numpl):
         if pre_index != None:
+            print(posteriors)
+            print(pre_index)
             posteriors = posteriors[pre_index[i]]
         # maxliind = np.argmax(posteriors['logL'])
         # maxlivar = posteriors[var][maxliind]
