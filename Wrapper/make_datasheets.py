@@ -163,7 +163,7 @@ def make_binary_sheet(system,outputloc,posteriors,indices,full_posteriors,numpl,
         fig = plt.figure(tight_layout=True)
         ind=indices[0]
         for i in range(1,len(indices)):
-            ind = np.logical_or(ind,indices(i))
+            ind = np.logical_or(ind,indices[i])
         ax1 = corner.corner(posteriors[cols][ind],show_titles=True,title_fmt='g',quantiles=[0.16,0.5,0.84],labels=[names[i]+units[i] for i in range(len(names))],titles=names)
         fig.set_size_inches(8.25,8.25)
         plt.savefig(outputloc+'corner.pdf')

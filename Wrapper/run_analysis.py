@@ -200,19 +200,38 @@ def calc_nump_variables(posterior_file,loc=None):
 def get_MaxLi_samp(posts):
     return posts[posts['logL']==max(posts['logL'])].head(1)
 
-def read_rv_data(file,SB2=False,skiprows=[1]):
+def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     
     rvdata = pd.read_csv(file,sep='\t',engine='python',skiprows=skiprows,header=0)
     datas = []
-    if SB2:
-        rvdata_pri = rvdata[['bjd','vrad1','svrad1']]
-        rvdata_sec = rvdata[['bjd','vrad2','svrad2']]
-        rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
-        datas.append(rvdata_pri)
-        datas.append(rvdata_sec)
-    else:
-        rvdata_pri = rvdata[['bjd','vrad','svrad']]
-        datas.append(rvdata_pri)
+    try:
+        if SB2:
+            rvdata_pri = rvdata[['bjd','vrad1','svrad1']]
+            rvdata_sec = rvdata[['bjd','vrad2','svrad2']]
+            rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
+            datas.append(rvdata_pri)
+            datas.append(rvdata_sec)
+        else:
+            if bisFW:
+                rvdata_pri = rvdata[['bjd','vrad','svrad','bis_span','fwhm']]
+            else:
+                rvdata_pri = rvdata[['bjd','vrad','svrad']]
+            datas.append(rvdata_pri)
+    except KeyError:
+        if SB2:
+            rvdata_pri = rvdata[['jdb','vrad1','svrad1']]
+            rvdata_sec = rvdata[['jdb','vrad2','svrad2']]
+            rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
+            datas.append(rvdata_pri)
+            datas.append(rvdata_sec)
+        else:
+            if bisFW:
+                rvdata_pri = rvdata[['jdb','vrad','svrad','bis_span','fwhm']]
+                rvdata_pri.columns = ['bjd','vrad','svrad','bis_span','fwhm']
+            else:
+                rvdata_pri = rvdata[['jdb','vrad','svrad']]
+                rvdata_pri.columns = ['bjd','vrad','svrad']
+            datas.append(rvdata_pri)
     
     return datas
     
@@ -378,7 +397,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             sec = secondaries[i]
             merr2,rms2,jit2 = round(sec.mean_rv_err(),4),round(sec.rms(),4),round(sec.jitter,4)
         else:
-            merr2,rms2.jit2 = nul,nul,nul
+            merr2,rms2,jit2 = nul,nul,nul
         params.append(['mean RV_err',round(pri.mean_rv_err(),4),merr2,nul,nul,'m/s'])
         params.append(['RMS',round(pri.rms(),4),rms2,nul,nul,'m/s'])
         params.append(['Jitter',round(pri.jitter,4),jit2,nul,nul,'m/s'])

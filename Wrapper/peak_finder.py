@@ -23,18 +23,15 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
         posterior sample in 'posteriors' has a planet belonging to the corresponding 'peak'
     '''
     
-    
+    posts = posteriors
     indices = []
     for i in range(numpl):
         if pre_index != None:
-            print(posteriors)
-            print(pre_index)
-            posteriors = posteriors[pre_index[i]]
+            posteriors = posts[pre_index[i]]
         # maxliind = np.argmax(posteriors['logL'])
         # maxlivar = posteriors[var][maxliind]
         maxlivar = float(maxlivars[i])
-        print(posteriors[var])
-        print(var)
+        
         lower,upper = min(posteriors[var]),max(posteriors[var])
         
         number=50
