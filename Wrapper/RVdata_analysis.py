@@ -142,7 +142,10 @@ class RV_planets:
     def add_drift(self,order,params):
         
         self.drift_order = order
+        for i in range(order,3):
+            params.append(0)
         self.drift_params = params
+        self.remove_drifts()
         
     def remove_orbit_from_data(self,data_times,data_values,orbit):
                 
@@ -153,7 +156,12 @@ class RV_planets:
         return data_values + orbit.RV_keplerian_sub(data_times)
         
     def remove_drifts(self):
-        pass
+        
+        tmid = (self.bjds[-1]+self.bjds[0])/2
+        
+        drift = self.drift_params[0]*(self.bjds-tmid) +self.drift_params[1]*(self.bjds-tmid)**2 + self.drift_params[2]*(self.bjds-tmid)**3
+        self.vrad -= drift
+        
         
     def residuals(self):
         

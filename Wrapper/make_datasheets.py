@@ -330,11 +330,14 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
         ax = plt.subplot(gs[i,0])
         ax.errorbar(data.bjds,data.residuals(),yerr=data.svrad,fmt='.',c='b',ecolor='darkgrey')
         ax.set(xlabel='date (bjd)',ylabel='Res (m/s)')
-        ax.text(0,0,str(instruments[i]))
+        leftlim = ax.axes.get_xlim()[0]
+        toplim = ax.axes.get_ylim()[1]
+        rightlim = ax.axes.get_xlim()[1]
+        ax.text((leftlim+rightlim)/2,toplim,str(instruments[i]),ha='center',va='top',c='m')
         ax.axhline(0,c='black',alpha=0.6)
         times += list(data.bjds)
         
-    fig.set_size_inches(7,4 )
+    fig.set_size_inches(7,4)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf')
     
     fig,ax2 = plt.subplots(1,subplot_kw={'projection': 'polar'})
