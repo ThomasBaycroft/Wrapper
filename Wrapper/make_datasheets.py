@@ -183,8 +183,8 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
         prefix = 'KO_'
     else:
         prefix = ''
-    fig = plt.figure(constrained_layout=True)
-    # fig = plt.figure()
+    # fig = plt.figure(constrained_layout=True)
+    fig = plt.figure()
     
     gs = GridSpec(5,5, figure=fig)
     
@@ -377,7 +377,8 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
 def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,binary=False):
     
     
-    fig = plt.figure(constrained_layout=True)
+    # fig = plt.figure(constrained_layout=True)
+    fig = plt.figure()
     gs = GridSpec(4,1,figure=fig)
     
     gs1 = gs[0:2,:].subgridspec(1,2)
