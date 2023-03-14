@@ -557,7 +557,7 @@ def write_header_text(ax,numpl,pri_data_list,sec_data_list=[],SB2=False):
     
 def write_footer_text(ax,posteriors,numpl,MaxLiSample,pri_data_list,sec_data_list=[],SB2=False):
     texty1=''
-    texty1+='# samples = '+str(int(len(posteriors)/numpl)) +'\n'
+    texty1+='# samples = '+str(int(len(posteriors)/max(numpl,1))) +'\n'
     try:
         nu = str(round(float(MaxLiSample.nu),1))
         texty1 += 'nu = '+nu+'\n'

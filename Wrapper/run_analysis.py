@@ -477,27 +477,6 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     
     parameters = pd.DataFrame(params,columns=param_columns)
     parameters.to_csv(outputloc+system+'_parameters.csv', index=False)
-    
-
-
-# star_mass = 1.0
-# #Tic172
-# SB2 = True
-# binary=True
-# epoch = 2459514.6629
-# datafile = 'TIC172_Dec2022.rdb'
-# #HD78418
-# SB2 = True
-# binary=True
-# epoch = 2459274.9281
-# datafile = 'HD78418_rvs.rdb'
-#HD195987
-# SB2 = True
-# binary=True
-# epoch = 2459298.359
-# epoch = 2457000
-# # datafile = 'HD195987_rvs.rdb'
-# loc = ''
 
 def write_detlim(loc,KM='K'):
     
