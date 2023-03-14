@@ -23,8 +23,7 @@ colours = ['r','b','g','m','c','darkviolet','orange']
 
 def make_binary_sheet(system,outputloc,posteriors,indices,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
     
-    # fig = plt.figure(constrained_layout=True)
-    fig = plt.figure()
+    fig = plt.figure(constrained_layout=True)
     
     gs = GridSpec(9,5, figure=fig)
     
@@ -184,8 +183,8 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
         prefix = 'KO_'
     else:
         prefix = ''
-    # fig = plt.figure(constrained_layout=True)
-    fig = plt.figure()
+    fig = plt.figure(constrained_layout=True)
+    # fig = plt.figure()
     
     gs = GridSpec(6,5, figure=fig)
     
@@ -274,7 +273,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
             ax8.errorbar(res,data.bis,c=colours[i],fmt='.')
         ax8.set(xlabel='Res (m/s)',ylabel='Bis_span (m/s)')
     
-    fig.set_size_inches(8.25,10)
+    fig.set_size_inches(10,12)
     fig.suptitle(system)
     if Known_object:
         loc = outputloc+system+'_'+str(sheet_number)+'_'+'known_object'+str(object_number+1)
@@ -456,7 +455,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     #     axs[1,1].text(pers[np.argmax(tiper_posts)],np.log10(max(tiper_posts)),str(round(max(tiper_posts),2)),ha='center')
       
     
-    fig.set_size_inches(8.25,10.75)
+    fig.set_size_inches(10.25,13.75)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')
     
     
