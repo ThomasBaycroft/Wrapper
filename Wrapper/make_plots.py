@@ -109,7 +109,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
             ax.plot(np.sort(orb.phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))]/1000,c='grey',alpha=0.6)
             ax.plot(np.sort(orb.phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))]/1000,c='grey',alpha=0.6)
         ax.axhline(0,c='grey',ls='--')
-        ax.set(xlim=[-0.1,1.1])#,ylabel=r'RV (km s$^{-1}$)')
+        ax.set(xlim=[-0.1,1.1],ylabel=r'RV (km s$^{-1}$)')
     elif body == 'binary_unphased':
         sub = 2400000
         ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
@@ -135,7 +135,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
         m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
-        ax.set(xlim=[-0.1,1.1],ylim=[-m,m])#,ylabel=r'res (km s$^{-1}$)')#,xlabel='phase')
+        ax.set(xlim=[-0.1,1.1],ylim=[-m,m],ylabel=r'res (km s$^{-1}$)')#,xlabel='phase')
         
     else:
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_planet(body))

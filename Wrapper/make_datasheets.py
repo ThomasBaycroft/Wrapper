@@ -23,7 +23,8 @@ colours = ['r','b','g','m','c','darkviolet','orange']
 
 def make_binary_sheet(system,outputloc,posteriors,indices,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
     
-    fig = plt.figure(constrained_layout=True)
+    # fig = plt.figure(constrained_layout=True)
+    fig = plt.figure()
     
     gs = GridSpec(9,5, figure=fig)
     
@@ -132,7 +133,7 @@ def make_binary_sheet(system,outputloc,posteriors,indices,full_posteriors,numpl,
                 res = data.vrad - data.vsys
             ax8.errorbar(res,data.bis,xerr=data.svrad,yerr=2*data.svrad,c='grey',fmt='.',alpha=0.6)
             ax8.errorbar(res,data.bis,c=colours[i],fmt='.')
-            ax8.set(xlabel='Res (m/s)',ylabel='Bis_span (m/s)')
+        ax8.set(xlabel='Res (m/s)',ylabel='Bis_span (m/s)')
         
     
     ax9 = plt.subplot(gs4[2,:], frameon=False)
@@ -183,7 +184,8 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
         prefix = 'KO_'
     else:
         prefix = ''
-    fig = plt.figure(constrained_layout=True)
+    # fig = plt.figure(constrained_layout=True)
+    fig = plt.figure()
     
     gs = GridSpec(6,5, figure=fig)
     
@@ -270,7 +272,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
                     res = data.remove_orbit_from_data(data.bjds,data.vrad,data.planet_orbits[object_number]) - data.vsys
             ax8.errorbar(res,data.bis,xerr=data.svrad,yerr=2*data.svrad,c='grey',fmt='.',alpha=0.6)
             ax8.errorbar(res,data.bis,c=colours[i],fmt='.')
-            ax8.set(xlabel='Res (m/s)',ylabel='Bis_span (m/s)')
+        ax8.set(xlabel='Res (m/s)',ylabel='Bis_span (m/s)')
     
     fig.set_size_inches(8.25,10)
     fig.suptitle(system)
