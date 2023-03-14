@@ -22,6 +22,7 @@ def semi_major_axis(M_tot,P):
 def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0]):
     M_tot = np.sum(Masses)
     smas = semi_major_axis(M_tot,Periods)
+    numbod = len(Masses)
     if ax==None:
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     
@@ -37,10 +38,12 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,
     else:
         start=0
     
-    for i in range(start,len(smas)):
+    for i in range(0,len(smas)):
         r = smas[i]*(1-eccs[i]**2)/(1+eccs[i]*np.cos(theta-omegas[i]+np.pi/2))
-        ax.plot(theta, r)
         rs.append(r)
+    for i in range(start,len(smas)):   
+        r = rs[i]
+        ax.plot(theta, r)
         if len(timeseries)>0:
             nus = phase(np.array(timeseries),Periods[i],tpers[i])*2*np.pi
             theta_points = nus +omegas[i] - np.pi/2
@@ -48,7 +51,7 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,
             ax.scatter(theta_points,r_points,c=timeseries,cmap='cool')
 
     ax.set_rmin(0)
-    if circumbinary:
+    if circumbinary==True and numbod>=3:
         min1 = min(rs[2]/rs[0])
         ax.text(3*np.pi/2,max(r)*1.3,'min dist ratio to primary ='+str(round(min1,2))+'  ',ha='right')
         min2 = min(rs[2]/rs[1])
