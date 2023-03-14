@@ -186,12 +186,12 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     fig = plt.figure(constrained_layout=True)
     # fig = plt.figure()
     
-    gs = GridSpec(6,5, figure=fig)
+    gs = GridSpec(5,5, figure=fig)
     
     #binary phased rv plot
-    gs1 = gs[1:6,:3].subgridspec(3,1,hspace=0)
+    gs1 = gs[1:5,:3].subgridspec(3,1)#,hspace=0)
     #binary parameters text and bisector plot
-    gs2 = gs[1:6,3:].subgridspec(3,1)
+    gs2 = gs[1:5,3:].subgridspec(3,1)
     
     #blank at the top to write text
     ax1 = plt.subplot(gs[0,:], frameon=False)
@@ -436,7 +436,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     
     ax6.plot(fiptip[0],np.log10(fiptip[1]),c='b',label='Posts')
     ax6.plot(fiptip[0],np.log10(fiptip[2]),c='r',label='Samps')
-    ax6.set(xlabel='Period (days)',ylabel=r'$log_{10}$ FIP')
+    ax6.set(xlabel='Period (days)',ylabel=r'$log_{10}$ FIP',ylim=[-3,0.1])
     ax6.axhline(np.log10(0.01))
     ax6.semilogx()
     ax6.legend()
