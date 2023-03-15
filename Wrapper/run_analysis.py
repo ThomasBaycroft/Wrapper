@@ -114,7 +114,7 @@ def Samples_BFs(loc,maxNp):
 def FIP_TIP(loc,maxNp,P_prior,dataspan):
     
     Pmin, Pmax = P_prior[0], P_prior[1]
-    print(Pmin.Pmax)
+    print(Pmin,Pmax)
     
     Likes_samps = np.array(pd.read_csv(loc+'sample_info.txt',header=None,skiprows=[0],sep='\s+',engine='python',usecols=[1]))
     weights = pd.read_csv(loc+'weights.txt',header=None)
