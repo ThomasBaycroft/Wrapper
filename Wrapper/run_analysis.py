@@ -336,7 +336,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
         primary.add_drift(0,MaxLiSolution)
         if binary:
-            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=MaxLiSolution['M_pri'],M1=MaxLiSolution['M_sec'],R0=MaxLiSolution['R_pri'])
+            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i])
                 if i>=1:
