@@ -385,7 +385,12 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     md.make_diagnostics(system, outputloc, datasheet_num, loc)
     
     # inds = np.ones(len(posteriors_single))
-    inds = indices[0]
+    if binary:
+        inds = indices_bin
+    elif numpl>=1:
+        inds = indices[0]
+    else:
+        inds = np.zeros(len(posteriors_single))
     for ind in indices:
         inds = np.logical_or(inds,ind)
     
