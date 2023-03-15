@@ -57,8 +57,6 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
                 lower, upper = lowers[j],uppers[j]   
         
         ind = np.logical_and(posteriors[var]<=upper,posteriors[var]>=lower)
-        print(ind)
-        print(pre_index)
         if pre_index == None:
             indices.append(ind)
         else:
