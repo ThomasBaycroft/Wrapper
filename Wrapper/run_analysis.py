@@ -286,7 +286,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             maxlivar.append(MaxLiSolution[var+str(0)])
             indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices)
             indices_full_bin = pf.simple_peaks(full_posteriors, var+str(0), maxlivar, 1, pre_index=indices_full)
-        
+    indices_bin=indices_bin[0]    
     # for var in variables_2:
     #     maxlivar=[]
     #     for i in range(nKOs):
@@ -297,8 +297,8 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
         maxlivar=[]
         for i in range(numpl):
             maxlivar.append(MaxLiSolution[var+str(i)])
-        indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)[0]
-        indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)[0]
+        indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
+        indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
 
     
     ##############################################################################
