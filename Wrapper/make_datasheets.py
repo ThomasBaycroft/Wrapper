@@ -161,7 +161,8 @@ def make_binary_sheet(system,outputloc,posteriors,indices,full_posteriors,numpl,
             names.append(r'$q$ ')
             units.append('')
         fig = plt.figure(tight_layout=True)
-        ind=indices[0]
+        if numpl>=1:
+            ind=indices[0]
         for i in range(1,len(indices)):
             ind = np.logical_or(ind,indices[i])
         ax1 = corner.corner(posteriors[cols][ind],show_titles=True,title_fmt='g',quantiles=[0.16,0.5,0.84],labels=[names[i]+units[i] for i in range(len(names))],titles=names)
