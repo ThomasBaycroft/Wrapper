@@ -114,6 +114,7 @@ def Samples_BFs(loc,maxNp):
 def FIP_TIP(loc,maxNp,P_prior,dataspan):
     
     Pmin, Pmax = P_prior[0], P_prior[1]
+    print(Pmin.Pmax)
     
     Likes_samps = np.array(pd.read_csv(loc+'sample_info.txt',header=None,skiprows=[0],sep='\s+',engine='python',usecols=[1]))
     weights = pd.read_csv(loc+'weights.txt',header=None)
@@ -288,9 +289,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             maxlivar.append(MaxLiSolution[var+str(0)])
             indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices_bin)
     indices_bin=indices_bin[0]    
-    print(indices_bin)
     indices_bin = posteriors_single['KO_P0']!=0
-    print(indices_bin)
     # for var in variables_2:
     #     maxlivar=[]
     #     for i in range(nKOs):
