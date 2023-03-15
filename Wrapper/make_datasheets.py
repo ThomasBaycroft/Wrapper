@@ -84,6 +84,14 @@ def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bi
     ax5.xaxis.set_major_locator(MaxNLocator(integer=True))
     
     ax6 = plt.subplot(gs4[0:2,:])
+    
+    #get dataspan
+    tmins,tmaxs = [], []
+    for data in pri_data_list:
+        tmins.append(min(data.bjds))
+        tmaxs.append(max(data.bjds))
+    dataspan = max(tmaxs)-min(tmins)
+    
     #set up the period bins
     numbins = 50
     Pbins = np.logspace(np.log10(min(full_posteriors['P'])),np.log10(max(full_posteriors['P'])),num=numbins+1) 
@@ -93,10 +101,10 @@ def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bi
     ax6.semilogx()
     ax6.grid(True)
     ax6.axvline(365,c='r', label='1 year')
-    # ax6.axvline(tmax-tmin,c='g', label='dataspan')
+    ax6.axvline(dataspan,c='g', label='dataspan')
     toplim = ax6.axes.get_ylim()[1]
     ax6.text(365,-toplim/9,'365',ha='center',c='r')
-    # ax6.text(tmax-tmin,-toplim/9,str(round(dataspan)),ha='center',c='g')
+    ax6.text(dataspan,-toplim/9,str(round(dataspan)),ha='center',c='g')
     
     ax7 = plt.subplot(gs3[0,0], frameon=False)
     ax7.axes.get_yaxis().set_visible(False)

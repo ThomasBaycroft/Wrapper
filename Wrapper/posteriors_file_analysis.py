@@ -10,7 +10,7 @@ from . import functions as fcs
 import numpy as np
 
 
-def add_columns(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0):
+def add_columns(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0,star_radius=1.0):
     '''
     takes a dataframe for the posteriors and adds columns for various derived quantities etc
     requires various flags/values:
@@ -34,6 +34,7 @@ def add_columns(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=
             q = 1.0
         #calculate the mass of the primary and secondary star if a binary
         posterior_file['M_pri'],posterior_file['M_sec'] = fcs.masses(SB2,posterior_file['KO_K0'],posterior_file['KO_P0'],posterior_file['KO_ecc0'],q=q,M1=star_mass)
+        posterior_file['R_pri'] = posterior_file['M_pri']*0+star_radius
         #if precessing calculate the anomalistic period, and then the semi-major axis
         if Precession:
             posterior_file['KO_Pano0'] = fcs.Period_change(posterior_file['KO_P0'], posterior_file['KO_ecc0'], posterior_file['KO_wdot0'])

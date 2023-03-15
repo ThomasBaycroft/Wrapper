@@ -336,12 +336,12 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
         primary.add_drift(0,MaxLiSolution)
         if binary:
-            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession)
+            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=MaxLiSolution['M_pri'],M1=MaxLiSolution['M_sec'],R0=MaxLiSolution['R_pri'])
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i])
                 if i>=1:
                     secondary.add_offset(MaxLiSolution['offset_sec'+str(i)])
-                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=MaxLiSolution.KO_q0)
+                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=MaxLiSolution.KO_q0,M0=MaxLiSolution['M_sec'],M1=MaxLiSolution['M_pri'])
                 secondary.add_planet(numpl,MaxLiSolution)
                 secondary.add_vsys(MaxLiSolution['vsys_sec'])
                 if len(datafiles)==1:
