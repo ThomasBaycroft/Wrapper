@@ -161,7 +161,7 @@ class RV_planets:
         
     def remove_drifts(self):
         
-        tmid = (self.bjds[-1]+self.bjds[0])/2
+        tmid = (max(self.bjds)+min(self.bjds))/2
         
         drift = self.drift_params[0]*(self.bjds-tmid) +self.drift_params[1]*(self.bjds-tmid)**2 + self.drift_params[2]*(self.bjds-tmid)**3
         self.vrad -= drift
