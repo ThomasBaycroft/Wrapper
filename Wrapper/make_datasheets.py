@@ -21,7 +21,7 @@ import os
 
 colours = ['r','b','g','m','c','darkviolet','orange']
 
-def make_binary_sheet(system,outputloc,posteriors,indices,indices_bin,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
+def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bin,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
     
     fig = plt.figure(constrained_layout=True)
     
@@ -139,7 +139,7 @@ def make_binary_sheet(system,outputloc,posteriors,indices,indices_bin,full_poste
     ax9.axes.get_yaxis().set_visible(False)
     ax9.axes.get_xaxis().set_visible(False)
     ax9.tick_params(labelbottom=False, labelleft=False)
-    write_footer_text(ax9,posteriors,numpl,MaxLiSolution,pri_data_list,sec_data_list)
+    write_footer_text(ax9,posteriors,len_posts,numpl,MaxLiSolution,pri_data_list,sec_data_list)
     
     fig.set_size_inches(8.25,11.75)
     fig.suptitle(system)   
@@ -556,9 +556,10 @@ def write_header_text(ax,numpl,pri_data_list,sec_data_list=[],SB2=False):
     ax.text(0.,1.,'# data = '+str(numdat)+'\t\t'\
              + r'$\chi^2_{\nu}$ = '+str(round(chi_squared_red,2))+'\t'+'T0 = '+str(round(datsum/numdat,6)))
     
-def write_footer_text(ax,posteriors,numpl,MaxLiSample,pri_data_list,sec_data_list=[],SB2=False):
+def write_footer_text(ax,posteriors,len_posts,numpl,MaxLiSample,pri_data_list,sec_data_list=[],SB2=False):
     texty1=''
-    texty1+='# samples = '+str(int(len(posteriors)/max(numpl,1))) +'\n'
+    texty1+='# samples = '+str(len_posts) +'\n'
+    texty1+='# Np samples = '+str(int(len(posteriors)/max(numpl,1))) +'\n'
     try:
         nu = str(round(float(MaxLiSample.nu),1))
         texty1 += 'nu = '+nu+'\n'

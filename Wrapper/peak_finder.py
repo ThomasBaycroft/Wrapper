@@ -45,16 +45,16 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
             isinpeak = np.r_[hist[0]>=-1+np.mean(hist[0]),np.array([0])]
             
         inpeak,lowers,uppers = False,[],[]
-        for i,val in enumerate(isinpeak):
+        for j,val in enumerate(isinpeak):
             if val==1 and inpeak==False:
-                lowers.append(hist[1][i])
+                lowers.append(hist[1][j])
                 inpeak = True
             elif val==0 and inpeak:
-                uppers.append(hist[1][i])
+                uppers.append(hist[1][j])
                 inpeak=False
-        for i in range(len(lowers)):
-            if lowers[i]<=maxlivar<=uppers[i]:
-                lower, upper = lowers[i],uppers[i]   
+        for j in range(len(lowers)):
+            if lowers[j]<=maxlivar<=uppers[j]:
+                lower, upper = lowers[j],uppers[j]   
         
         ind = np.logical_and(posteriors[var]<=upper,posteriors[var]>=lower)
         print(ind)

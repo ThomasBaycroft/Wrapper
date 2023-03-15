@@ -242,6 +242,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
     maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,loc)
     #now only consider the posteriors with the correct number of planets
+    len_posts = len(posterior_file)
     posteriors = posterior_file[posterior_file['Np']==numpl]
     
     #Get the maximum likelihood solution
@@ -369,7 +370,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     
     #Make the various datasheets
     datasheet_num = 1
-    md.make_binary_sheet(system,outputloc,posteriors_single, indices, indices_bin, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
+    md.make_binary_sheet(system,outputloc,posteriors_single, len_posts, indices, indices_bin, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
     datasheet_num += 1
     for i in range(nKOs):
         md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
