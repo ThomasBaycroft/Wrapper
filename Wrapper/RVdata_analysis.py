@@ -141,10 +141,14 @@ class RV_planets:
             
     def add_drift(self,order,params):
         
+        self.drift_params = []
         self.drift_order = order
+        var=['slope','quadr','cubic']
+        for i in range(order):
+            self.drift_params.append(float(params[var[i]]))
         for i in range(order,3):
-            params.append(0)
-        self.drift_params = params
+            self.drift_params.append(0)
+        
         self.remove_drifts()
         
     def remove_orbit_from_data(self,data_times,data_values,orbit):
