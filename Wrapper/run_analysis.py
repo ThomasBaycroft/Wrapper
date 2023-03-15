@@ -277,14 +277,28 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     ##############################################################################
     #currently using simple peak finding, could do with refining maybe more variables
     variables = ['P','K']
+    variables_2 = ['KO_P','KO_K']
     indices=None
     indices_full=None
+    if binary:
+        for var in variables_2:
+            maxlivar=[]
+            maxlivar.append(MaxLiSolution[var+str(0)])
+            indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices)
+            indices_full_bin = pf.simple_peaks(full_posteriors, var+str(0), maxlivar, 1, pre_index=indices_full)
+        
+    # for var in variables_2:
+    #     maxlivar=[]
+    #     for i in range(nKOs):
+    #         maxlivar.append(MaxLiSolution[var+str(i)])
+    #     indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
+    #     indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
     for var in variables:
         maxlivar=[]
         for i in range(numpl):
             maxlivar.append(MaxLiSolution[var+str(i)])
-        indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
-        indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
+        indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)[0]
+        indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)[0]
 
     
     ##############################################################################
@@ -352,7 +366,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     
     #Make the various datasheets
     datasheet_num = 1
-    md.make_binary_sheet(system,outputloc,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
+    md.make_binary_sheet(system,outputloc,posteriors_single, indices, indices_bin, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
     datasheet_num += 1
     for i in range(nKOs):
         md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
