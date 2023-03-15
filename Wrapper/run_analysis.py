@@ -327,7 +327,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
         
         
         primary = RV_planets(rvdata_pri,instruments[i])
-        if i>=1:
+        if len(datafiles)>=2 and i<len(datafiles):
             primary.add_offset(MaxLiSolution['offset'+str(i)])
         primary.add_planet(numpl,MaxLiSolution)
         primary.add_vsys(MaxLiSolution['vsys'])
@@ -411,7 +411,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
     for i,pri in enumerate(primaries):
         params.append([nul,instruments[i],nul,nul,nul,nul])
         if i >=1:
-            param = posteriors_single['offest'+str(i)][inds]
+            param = posteriors_single['offset'+str(i)][inds]
             params.append('offset',np.round(float(MaxLiSolution['offset'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s')
         if SB2:
             if i >=1:
