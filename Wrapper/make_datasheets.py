@@ -365,26 +365,30 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
         pl_ws.append(float(MaxLiSolution['w'+str(i)]))
         Tpers.append(float(MaxLiSolution['Tper'+str(i)]))
     
-        
+    plot = False
     if binary:
+        plot = True
         Bin_P,M1,M2,Bin_e,Bin_w = float(MaxLiSolution['KO_P0']),float(MaxLiSolution['M_pri']),float(MaxLiSolution['M_sec']),float(MaxLiSolution['KO_ecc0']),float(MaxLiSolution['KO_w0'])
         Tpers = [float(MaxLiSolution['Tper_bin']),float(MaxLiSolution['Tper_bin'])]+Tpers
         op.plot_circumbinary(Bin_P, M1, M2, Bin_e, Bin_w, pl_Ps, pl_Ms, pl_es, pl_ws,timeseries=times,tpers=Tpers,SB2=SB2,ax=ax2)
     else:
-        op.plot_orbits(pl_Ms, pl_Ps, pl_Ps, pl_ws,timeseries=times,tpers=Tpers,ax=ax2)
+        if numpl >= 1 or nKOs >=1:
+            plot = True
+            op.plot_orbits(pl_Ms, pl_Ps, pl_Ps, pl_ws,timeseries=times,tpers=Tpers,ax=ax2)
     
-    fig.set_size_inches(5,5)
-    plt.savefig(outputloc+'orbit.pdf')
+    if plot:
+        fig.set_size_inches(5,5)
+        plt.savefig(outputloc+'orbit.pdf')
+        
+        pdf_merger = PdfMerger()
+        pdf_merger.append(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf')
+        
+        pdf_merger.append(outputloc+'orbit.pdf')
+        
+        
+        pdf_merger.write(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf') 
     
-    pdf_merger = PdfMerger()
-    pdf_merger.append(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf')
-    
-    pdf_merger.append(outputloc+'orbit.pdf')
-    
-    
-    pdf_merger.write(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf') 
-
-    os.system('rm '+outputloc+'orbit.pdf')
+        os.system('rm '+outputloc+'orbit.pdf')
     
 def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,binary=False):
     
