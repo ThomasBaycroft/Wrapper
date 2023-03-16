@@ -33,7 +33,7 @@ from . import make_datasheets as md
 
 time0 = time.time()
 
-def make_posterior_file(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0):
+def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0):
     #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
     with open(loc+'posterior_sample.txt') as f:
         names = f.readline().split()[1:]
@@ -72,7 +72,7 @@ def make_posterior_file(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0):
     try:
         posterior_file = pd.read_csv(loc+'posterior_file.csv')
     except FileNotFoundError:
-        posterior_file= pfa.add_columns(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err)
+        posterior_file= pfa.add_columns_RV(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err)
         # a,b=[],[]
         # for i in range(len(posterior_file)):
         #     x,y = op.transit_pred(posterior_file[['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']].values[i], posterior_file[['M_pl_0','P0','ecc0','Tper0','w0']].values[i], 2458800,epoch)
@@ -288,7 +288,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
             maxlivar=[]
             maxlivar.append(MaxLiSolution[var+str(0)])
             indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices_bin)
-    indices_bin=indices_bin[0]    
+        indices_bin=indices_bin[0]    
     indices_bin = posteriors_single['KO_P0']!=0
     # for var in variables_2:
     #     maxlivar=[]

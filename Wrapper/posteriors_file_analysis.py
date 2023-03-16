@@ -10,7 +10,7 @@ from . import functions as fcs
 import numpy as np
 
 
-def add_columns(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0,star_radius=1.0):
+def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0,star_radius=1.0):
     '''
     takes a dataframe for the posteriors and adds columns for various derived quantities etc
     requires various flags/values:
