@@ -255,6 +255,7 @@ class orbit:
         self.M0 = M0
         self.M1 = M1
         self.R0 = R0
+        print('orbit',self.GR,self.Tides)
 
     def RV_keplerian_sub(self,times):
         
