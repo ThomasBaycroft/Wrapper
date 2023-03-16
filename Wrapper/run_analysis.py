@@ -178,7 +178,7 @@ def calc_nump_variables(posterior_file,loc=None):
     for i in range(maxNp):
         Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
         Bayes_factors[i] = max(np.sum([posterior_file['Np']==float(i+1)]),1)/max(np.sum([posterior_file['Np']==float(i)]),1)
-        if Bayes_factors[i] >=1:
+        if Bayes_factors[i] >=3:
             numpl = i+1
     i+=1
     Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
