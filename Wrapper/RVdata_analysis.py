@@ -34,8 +34,8 @@ class RV_planets:
         self.inst_name = inst_name
         self.bisfw = bis_and_FWHM
         if self.bisfw:
-            self.bis = self.RVdatas[3]
-            self.fwhm = self.RVdatas[4]
+            self.bis = self.RVdatas['bis_span']
+            self.fwhm = self.RVdatas['fwhm']
         self.binary = False
         self.numpl = 0
         self.nKOs = 0
