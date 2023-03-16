@@ -237,7 +237,7 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000]):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000]):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -321,7 +321,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,SB2=False,bi
         #     rvdata_sec = rvdata[['bjd','vrad2','svrad2']]
         #     rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
         else:
-            rvdata_pri = read_rv_data(datafile,False)[0]
+            rvdata_pri = read_rv_data(datafile,SB2=False,bisFW=bis_fw)[0]
         #     rvdata_pri = rvdata[['bjd','vrad','svrad']]
         
         
