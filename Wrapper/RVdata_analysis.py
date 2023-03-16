@@ -49,6 +49,8 @@ class RV_planets:
         if self.rvunits == 'kms':
             self.vrad *= 1000
             self.svrad *= 1000
+            if self.bisfw:
+                self.bis *= 1000
         self.jitter = 0.
         self.num_params = 0
         self.studT = False
