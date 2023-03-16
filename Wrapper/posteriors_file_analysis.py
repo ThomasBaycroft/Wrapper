@@ -82,7 +82,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
         for i in range(nKOs):
             #calculate the mass of any additional known objects
             posterior_file['M_KO_'+str(i)] = fcs.masses(False,posterior_file['KO_K'+str(i)],posterior_file['KO_P'+str(i)],posterior_file['KO_ecc'+str(i)])[1]
-            posterior_file['a_KO_'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],posterior_file['M_pri']+posterior_file['M_sec'],posterior_file['M_KO_'+str(i)])[1]
+            posterior_file['a_KO_'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],posterior_file['M_pri'],posterior_file['M_KO_'+str(i)])[1]
             #calculate the time of periastron for each known object
             posterior_file['KO_Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['KO_P'+str(i)]*posterior_file['KO_phi'+str(i)]/2/np.pi
             posterior_file['KO_w'+str(i)] = centre_angles(posterior_file['KO_w'+str(i)])
@@ -92,8 +92,8 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
             #get indices of where no planet is found for this column to make the masses zero
             isplanet = posterior_file['P'+str(i)]>0.0
             #calculate masses of planets in each sample, assume a central mass of the sum of the binary masses
-            posterior_file['M_pl_'+str(i)] = fcs.masses(False,posterior_file['K'+str(i)],posterior_file['P'+str(i)],posterior_file['ecc'+str(i)],M1=posterior_file['M_star'])[1]*isplanet
-            posterior_file['a_pl_'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],posterior_file['M_star'],posterior_file['M_pl_'+str(i)])[1]*isplanet
+            posterior_file['M_pl_'+str(i)] = fcs.masses(False,posterior_file['K'+str(i)],posterior_file['P'+str(i)],posterior_file['ecc'+str(i)],M1=posterior_file['M_pri'])[1]*isplanet
+            posterior_file['a_pl_'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],posterior_file['M_pri'],posterior_file['M_pl_'+str(i)])[1]*isplanet
             #calculate the time of periastron for each planetary solution
             posterior_file['Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi
             posterior_file['w'+str(i)] = centre_angles(posterior_file['w'+str(i)])
