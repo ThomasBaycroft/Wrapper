@@ -374,7 +374,7 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     else:
         if numpl >= 1 or nKOs >=1:
             plot = True
-            op.plot_orbits(pl_Ms, pl_Ps, pl_Ps, pl_ws,timeseries=times,tpers=Tpers,ax=ax2)
+            op.plot_orbits(np.array(pl_Ms), np.array(pl_Ps), np.array(pl_Ps), np.array(pl_ws),timeseries=np.array(times),tpers=np.array(Tpers),ax=ax2)
     
     if plot:
         fig.set_size_inches(5,5)
