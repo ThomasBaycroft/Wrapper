@@ -78,7 +78,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
     
         
     else:
-        posterior_file['M_star'] = star_mass        
+        posterior_file['M_pri'] = star_mass        
         for i in range(nKOs):
             #calculate the mass of any additional known objects
             posterior_file['M_KO_'+str(i)] = fcs.masses(False,posterior_file['KO_K'+str(i)],posterior_file['KO_P'+str(i)],posterior_file['KO_ecc'+str(i)])[1]
