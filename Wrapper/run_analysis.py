@@ -237,7 +237,7 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000]):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0]):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -262,7 +262,13 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     
     MaxLiSolution = posts[posts['logL']==max(posts['logL'])].head(1)
     
-    
+    if SB2:
+        pass
+    else:
+        MaxLiSolution['M_pri'] = CMR[0]
+        if binary:
+            MaxLiSolution['R_pri'] = CMR[1]
+            MaxLiSolution['M_sec'] = fcs.masses(SB2,float(MaxLiSolution['KO_K0']),float(MaxLiSolution['KO_P0']),float(MaxLiSolution['KO_ecc0']),q=1.0,M1=float(MaxLiSolution['M_pri']))[1]
     
     #combine the columns for multiple planets into one for periodogram search
     columns_of_planetary_interest = ['P','K','phi','ecc','w','wdot','M_pl_','a_pl_','Tper']
