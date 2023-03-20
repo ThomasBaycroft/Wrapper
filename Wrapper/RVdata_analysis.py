@@ -230,9 +230,12 @@ class RV_planets:
             file.append(self.remove_orbit_from_data(self.bjds, self.vrad, self.binary_orbit))
         columns.append('residuals')
         file.append(self.residuals())
+        columns.append('svrad')
+        file.append(self.svrad)
         if self.studT:
             columns.append('T_ratio')
             file.append(self.studT_ratios)
+
         df = pd.DataFrame(np.array(file).T,columns=columns)
         df.to_csv(loc+system+self.inst_name+prisec+'_residuals.csv',index=False)
         
@@ -266,9 +269,14 @@ class orbit:
         
         return rvs
     
-    def RV_keplerian_add(self,times):
+    def RV_keplerian_add(self,times,phase=False):
         
-        return fcs.keplerian(times, self.P, self.K, self.ecc, self.w,self.Tper, 0)
+        if phase:
+            kep = fcs.keplerian_phase(times, self.P, self.K, self.ecc, self.w,self.Tper, 0)
+        else:
+            kep = fcs.keplerian(times, self.P, self.K, self.ecc, self.w,self.Tper, 0)
+            
+        return kep
         
     def phase(self,times):
         

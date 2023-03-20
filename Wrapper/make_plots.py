@@ -149,6 +149,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
             ax.plot(np.sort(orb.phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(orb.phase(times))],c='grey')
         ax.axhline(0,c='grey',ls='--')
         ax.set(xlim=[-0.1,1.1],ylabel=r'RV (m s$^{-1}$)')
+        
 def plot_rv_phase_binned(ax,phase,rvdata,numbins=10,mark='8',colour='black'):
     
     phase = np.array(phase)

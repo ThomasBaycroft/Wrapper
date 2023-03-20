@@ -237,11 +237,13 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0]):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0],enfnp=0):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
     maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,loc)
+    if enfnp >=1:
+        numpl = enfnp
     #now only consider the posteriors with the correct number of planets
     len_posts = len(posterior_file)
     posteriors = posterior_file[posterior_file['Np']==numpl]
@@ -358,8 +360,8 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 secondaries.append(secondary)
                 secondary.write_reses(outputloc+'datafiles/', system,prisec='_sec')
                 primary.write_reses(outputloc+'datafiles/', system,prisec='_pri')
-        else:
-            primary.write_reses(outputloc+'datafiles/', system)
+            else:
+                primary.write_reses(outputloc+'datafiles/', system)
         primaries.append(primary)
 
         
@@ -414,7 +416,6 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     params.append(['reference epoch',round(float(MaxLiSolution['Epoch']),8),nul,nul,nul,'bjd'])
     params.append(['data timespan',round(dataspan),nul,nul,nul,'days'])
     for i,pri in enumerate(primaries):
-        params.append([nul,instruments[i],nul,nul,nul,nul])
         if i >=1:
             param = posteriors_single['offset'+str(i)][inds]
             params.append(['offset',np.round(float(MaxLiSolution['offset'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
@@ -426,6 +427,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             merr2,rms2,jit2 = round(sec.mean_rv_err(),4),round(sec.rms(),4),round(sec.jitter,4)
         else:
             merr2,rms2,jit2 = nul,nul,nul
+        params.append([nul,instruments[i],nul,nul,nul,nul])
         params.append(['mean RV_err',round(pri.mean_rv_err(),4),merr2,nul,nul,'m/s'])
         params.append(['RMS',round(pri.rms(),4),rms2,nul,nul,'m/s'])
         params.append(['Jitter',round(pri.jitter,4),jit2,nul,nul,'m/s'])
