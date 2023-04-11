@@ -203,7 +203,7 @@ def get_MaxLi_samp(posts):
 
 def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     
-    rvdata = pd.read_csv(file,sep='\t',engine='python',skiprows=skiprows,header=0)
+    rvdata = pd.read_csv(file,sep='\t',engine='python',skiprows=skiprows,header=0,comment='#')
     datas = []
     try:
         if SB2:
@@ -355,7 +355,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 if len(datafiles)==1:
                     secondary.add_jitter(MaxLiSolution['extra_sigma_sec'])
                 else:
-                   secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
+                    secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 secondary.add_drift(0,MaxLiSolution)
                 secondaries.append(secondary)
                 secondary.write_reses(outputloc+'datafiles/', system,prisec='_sec')

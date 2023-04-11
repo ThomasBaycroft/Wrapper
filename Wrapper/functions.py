@@ -309,6 +309,9 @@ def get_mass(K,M0,P,e):
     else:
         M0 = np.atleast_1d(M0)
     # print(K)
+    # print(M0)
+    # print(P)
+    # print(e)
     for i in range(K.size):
         a = 0
         b = 2*M0[i]
@@ -626,7 +629,7 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
     masses=[]
     for i in range(len(M0)):
         def fun(m0):
-            xxx = wdot_dyn(M0[i],M1[i],m0,e1[i],e2[i],P1[i],P2[i],w1[i],inc[i]) - wdot[i] + wdot_GR(M0[i],M1[i],e1[i],P1[i])+3.7
+            xxx = wdot_dyn(M0[i],M1[i],m0,e1[i],e2[i],P1[i],P2[i],w1[i],inc[i]) - wdot[i] #+ wdot_GR(M0[i],M1[i],e1[i],P1[i])+3.7
             # print(xxx)
             return xxx
         Mass = sp.optimize.root(fun,0.01)
@@ -647,10 +650,16 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
 
 def vtan(M0,M1,P):
     a0,a1=sma_2body(P,M0,M1)
+    print(a0+a1,a1*AU)
     v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
     return v_circ*M1/M0
 
 def vtan2(M0,M1,atot):
+    a1 = atot*M0/(M0+M1)
+    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    return v_circ*M1/M0
+
+def vtan2_ecc(M0,M1,atot):
     a1 = atot*M0/(M0+M1)
     v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
     return v_circ*M1/M0
@@ -676,18 +685,27 @@ def get_LTTE_mass_scp(K,M0,P):
     '''
     Root finder for the Mass of a body, given:
         M0: Central mass (M_sun)
-        K: semi-amplitude (m/s)
+        K: semi-amplitude (s)
         P: Period (days)
         e: eccentricity
     Uses scipy.optimize.root
     '''
+    K,M0,P = np.atleast_1d(K,M0,P)
     
-    def fun(M2):
-        return semi_amp_LTTE(P,M0,M2) - K    
-    Mass = sp.optimize.root(fun,M0)
-    if Mass.message != 'The solution converged.':
-        print('Warning: Mass not conerged with message',Mass.message)
-    return Mass.x[0]
+    masses=[]
+    for i in range(len(K)):
+        def fun(M2):
+            return semi_amp_LTTE(P[i],M0[i],M2) - K[i] 
+        # print(P[i],M0[i],K[i])
+        Mass = sp.optimize.root(fun,M0[i]/4)
+        if Mass.message != 'The solution converged.':
+            print('Warning: Mass not conerged with message',Mass.message)
+        masses.append(Mass.x[0])
+    if len(masses)>=2:
+        ret = masses
+    else:
+        ret = masses[0]
+    return ret    
 
 def ET_wdot_mass(ephem1,P,M0,M1,e1,P2,w1,e2=0):
     wdot = (360/(P/365.25))*3600    

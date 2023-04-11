@@ -114,6 +114,7 @@ class RV_planets:
         self.numpl = numpl
         self.num_bodies += numpl
         
+        
         if precession==False:
             for i in range(numpl):
                 params['wdot'+str(i)] = 0.
