@@ -49,7 +49,8 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
             theta_points = nus +omegas[i] - np.pi/2
             r_points = smas[i]*(1-eccs[i]**2)/(1+eccs[i]*np.cos(nus))
             c = ax.scatter(theta_points,r_points,c=timeseries,cmap='cool',alpha=alpha)
-            fig.colorbar(c, label='bjd')
+            if i == 0:
+                fig.colorbar(c, label='bjd')
             
 
     ax.set_rmin(0)
