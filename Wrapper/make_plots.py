@@ -14,6 +14,7 @@ from . import make_plots as mplt
 from . import posteriors_file_analysis as pfa
 import astropy.constants as cst
 import pandas  as pd
+import random
 
 Ms = cst.M_sun.value
 Mj = cst.M_jup.value
@@ -265,46 +266,54 @@ def plot_detlim_lines(ax,loc,KM='K'):
     
     ax.plot(xax,detlim,label=loc)
     
-def plot_wdot_planets(ax,loc,detlimloc):
+def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey'):
     
     
     detlim_posts  = pd.read_csv(detlimloc+'posterior_file.csv')
-    maxNp, numpl, Bayes_factors, Nps = ra.calc_nump_variables(detlim_posts)
+    maxNp, numpl, nKOs, Bayes_factors, Nps, BFsamps = ra.calc_nump_variables(detlim_posts)
     #now only consider the posteriors with the correct number of planets
     detlim_posteriors = detlim_posts[detlim_posts['Np']==numpl]
     
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
     numbins=25
-    xax, detlim,p_bins = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
+    xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
-    maxNp, numpl, Bayes_factors, Nps = ra.calc_nump_variables(posterior_file)
+    maxNp, numpl, nKOs, Bayes_factors, Nps, BFsamps = ra.calc_nump_variables(posterior_file)
     #now only consider the posteriors with the correct number of planets
     posteriors = posterior_file[posterior_file['Np']==numpl]
     
-    number = len(posteriors)
-
+    # number = len(posteriors)
+    
     P = np.random.rand(number)*980 + 20
     wdot = np.array(posteriors['KO_wdot0'])
     M_under  = []
     P_under = []
-    for i in range(number):
-        M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[i],np.array(posteriors['KO_w0'])[i],0,wdot[i])
+    inds = random.sample(list(posteriors.index),number)
+    fails=[]
+    for j,i in enumerate(inds):
+        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
+        # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
         # plt.scatter(P[i],M*Ms/Mj,c='cornflowerblue',s=8,alpha=0.04)
         try:
-            P_stab=fcs.get_HW_stab(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_P0'])[i],np.array(posteriors['KO_ecc0'])[i],ext=True)
-            Mdl = detlim[list(np.histogram(P[i],bins=p_bins)[0]).index(1)]
-            if M<Mdl and P[i] > P_stab:
+            P_stab=fcs.get_HW_stab(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_P0'][i],posteriors['KO_ecc0'][i],ext=True)
+            Mdl = detlim[list(np.histogram(P[j],bins=p_bins)[0]).index(1)]
+            if M<Mdl and P[j] > P_stab:
                 # M_under.append(M*Ms/Mj)
-                plt.scatter(P[i],M*Ms/Mj,c='cornflowerblue',s=8,alpha=0.4)
+                plt.scatter(P[j],M*Ms/Mj,c=scattercol,s=8,alpha=0.4)
                 # P_under.append(P[i])
             else:
-                plt.scatter(P[i],M*Ms/Mj,c='grey',s=8,alpha=0.1)
+                if outcol=='grey':
+                    al=0.1
+                else:
+                    al=0.4
+                plt.scatter(P[j],M*Ms/Mj,c=outcol,s=8,alpha=al)
         except ValueError:
-            print(P[i])
+            fails.append(P[j])
+    print(len(fails),'errors recorded')
         
-    plt.plot(xax,detlim*Ms/Mj,c='purple',label='Detection limit')    
+    plt.plot(xax,detlim*Ms/Mj,c=detlimcol,label='Detection limit')    
     # bincen, perc = get_percentile(np.array(P_under),np.array(M_under),bins=np.linspace(min(P_under),max(P_under),20),percentile=99,log=False)
     # plt.plot(bincen,perc)
     # sns.kdeplot(P_under,M_under,levels=[0.64,0.95],log_scale=(False,False),color='indianred')
@@ -328,3 +337,84 @@ def plot_wdot_planets(ax,loc,detlimloc):
     plt.axhline(13,ls='--',c='grey')
     plt.axvline(42.8,c='g',label='stability limit')
     plt.legend()
+    
+def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',stabcol='r'):
+    
+    
+    detlim_posts  = pd.read_csv(detlimloc+'posterior_file.csv')
+    maxNp, numpl, nKOs, Bayes_factors, Nps, BFsamps = ra.calc_nump_variables(detlim_posts)
+    #now only consider the posteriors with the correct number of planets
+    detlim_posteriors = detlim_posts[detlim_posts['Np']==numpl]
+    
+    columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
+    detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
+    numbins=25
+    xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
+    
+    posteriors = posts
+    
+    # number = len(posteriors)
+    
+    P = np.random.rand(number)*400 + 20
+    inds = random.sample(list(posteriors.index),number)
+    # print(inds)
+    # print(posteriors)
+    fails=[]
+    P_stabs=[]
+    done = 0
+    for j,i in enumerate(inds):
+        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
+        # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
+        # plt.scatter(P[i],M*Ms/Mj,c='cornflowerblue',s=8,alpha=0.04)
+        try:
+            P_stab=fcs.get_HW_stab(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_P0'][i],posteriors['KO_ecc0'][i],ext=True)
+            P_stabs.append(P_stab)
+            try:
+                Mdl = detlim[list(np.histogram(P[j],bins=p_bins)[0]).index(1)]
+            except ValueError:
+                Mdl = 0
+            if M<Mdl and P[j] > P_stab:
+                # M_under.append(M*Ms/Mj)
+                if done >0:
+                    plt.scatter(P[j],M*Ms/Mj,c=scattercol,s=8,alpha=0.2)
+                else:
+                    plt.scatter(P[j],M*Ms/Mj,c=scattercol,s=8,alpha=0.2,label=r'Planet ($\dot{\omega}$)')
+                    done = 1
+                # P_under.append(P[i])
+            else:
+                if outcol=='grey':
+                    al=0.1
+                else:
+                    al=0.2
+                plt.scatter(P[j],M*Ms/Mj,c=outcol,s=8,alpha=al)
+        except ValueError:
+            fails.append(P[j])
+    print(len(fails),'errors recorded')
+        
+    plt.plot(xax,detlim*Ms/Mj,c=detlimcol,label='Detection limit')    
+    # bincen, perc = get_percentile(np.array(P_under),np.array(M_under),bins=np.linspace(min(P_under),max(P_under),20),percentile=99,log=False)
+    # plt.plot(bincen,perc)
+    # sns.kdeplot(P_under,M_under,levels=[0.64,0.95],log_scale=(False,False),color='indianred')
+    plt.xlabel('Period (days)')
+    plt.ylabel(r'Mass (M$_J$)')
+    plt.ylim([0.1,1000])
+    plt.semilogy()
+    # xax = np.linspace(40,840,60)
+    # Mbin = np.ones(len(xax))*(2.151+1.992)
+    # es = np.ones(len(xax))*0.2419
+    # Ks = np.ones(len(xax))*5000
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='b',label='5 km/s')
+    # Ks = np.ones(len(xax))*1000
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='r',label='1 km/s')
+    # Ks = np.ones(len(xax))*400
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='g',label='400 m/s')
+    # plt.axhline(80,ls='--',c='grey')
+    # plt.axhline(13,ls='--',c='grey')
+    plt.axvline(np.median(P_stabs),c=stabcol,label='stability limit',ls='--')
+    plt.fill_betweenx([0.1,1000],[np.median(P_stabs)],fc='orange',alpha=0.4,label='unstable region')
+    plt.legend()    
+    
+    

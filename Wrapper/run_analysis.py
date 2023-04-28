@@ -114,7 +114,7 @@ def Samples_BFs(loc,maxNp):
 def FIP_TIP(loc,maxNp,P_prior,dataspan):
     
     Pmin, Pmax = P_prior[0], P_prior[1]
-    print(Pmin,Pmax)
+    # print(Pmin,Pmax)
     
     Likes_samps = np.array(pd.read_csv(loc+'sample_info.txt',header=None,skiprows=[0],sep='\s+',engine='python',usecols=[1]))
     weights = pd.read_csv(loc+'weights.txt',header=None)
@@ -349,7 +349,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 secondary = RV_planets(rvdata_sec,instruments[i])
                 if i>=1:
                     secondary.add_offset(MaxLiSolution['offset_sec'+str(i)])
-                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=MaxLiSolution.KO_q0,M0=MaxLiSolution['M_sec'],M1=MaxLiSolution['M_pri'])
+                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0),M0=float(MaxLiSolution['M_sec']),M1=float(MaxLiSolution['M_pri']))
                 secondary.add_planet(numpl,MaxLiSolution)
                 secondary.add_vsys(MaxLiSolution['vsys_sec'])
                 if len(datafiles)==1:

@@ -19,7 +19,7 @@ Mj = cst.M_jup.value
 def semi_major_axis(M_tot,P):
     return ((P*24*3600)**2*G*(M_tot)*Ms/(4*np.pi**2))**(1/3)/AU
 
-def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0]):
+def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-'):
     M_tot = np.sum(Masses)
     smas = semi_major_axis(M_tot,Periods)
     numbod = len(Masses)
@@ -43,28 +43,30 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,
         rs.append(r)
     for i in range(start,len(smas)):   
         r = rs[i]
-        ax.plot(theta, r)
+        ax.plot(theta, r,alpha=alpha,c=cs[i],ls=ls)
         if len(timeseries)>0:
             nus = phase(np.array(timeseries),Periods[i],tpers[i])*2*np.pi
             theta_points = nus +omegas[i] - np.pi/2
             r_points = smas[i]*(1-eccs[i]**2)/(1+eccs[i]*np.cos(nus))
-            ax.scatter(theta_points,r_points,c=timeseries,cmap='cool')
+            c = ax.scatter(theta_points,r_points,c=timeseries,cmap='cool',alpha=alpha)
+            fig.colorbar(c, label='bjd')
+            
 
     ax.set_rmin(0)
-    if circumbinary==True and numbod>=3:
+    if circumbinary==True and numbod>=3 and text==True:
         min1 = min(rs[2]/rs[0])
         ax.text(3*np.pi/2,max(r)*1.3,'min dist ratio to primary ='+str(round(min1,2))+'  ',ha='right')
         min2 = min(rs[2]/rs[1])
         ax.text(3*np.pi/2,max(r)*1.3,'min dist ratio to secondary ='+str(round(min2,2))+'  ',ha='left')
         
    
-def plot_circumbinary(Bin_P,M1,M2,Bin_e,Bin_w,pl_Ps,pl_Ms,pl_es,pl_ws,timeseries=[],tpers=[],SB2=False,ax=None):
+def plot_circumbinary(Bin_P,M1,M2,Bin_e,Bin_w,pl_Ps,pl_Ms,pl_es,pl_ws,timeseries=[],tpers=[],SB2=False,ax=None,alpha=1,text=True,c=['r','b','g','m','c','darkviolet','orange'],ls='-'):
     pl_Ms = [mass*Mj/Ms for mass in pl_Ms]
     masses = np.array([M1,M2]+pl_Ms)
     Periods = np.array([Bin_P,Bin_P]+pl_Ps)
     eccs = np.array([Bin_e,Bin_e]+pl_es)
     omegas = np.array([Bin_w-np.pi,Bin_w]+pl_ws)
-    plot_orbits(masses,Periods,eccs,omegas,circumbinary=True,timeseries=timeseries,tpers=tpers,SB2=SB2,ax=ax)
+    plot_orbits(masses,Periods,eccs,omegas,circumbinary=True,timeseries=timeseries,tpers=tpers,SB2=SB2,ax=ax,alpha=alpha,text=text,cs=c,ls=ls)
     
 def phase(t, P, T0, phi_max=1):
     """

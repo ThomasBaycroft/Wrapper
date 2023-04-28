@@ -588,7 +588,7 @@ def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
 
     wdot -= wdot_GR(M0,M1,e1,P1)
     
-    m0 = 0.000000001
+    m0 = 0.0000000000000000001
     m1 = 10000
     wd0 = wdot_dyn(M0,M1,m0,e1,e2,P1,P2,w1,inc)
     wd1 = wdot_dyn(M0,M1,m1,e1,e2,P1,P2,w1,inc)
@@ -629,7 +629,7 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
     masses=[]
     for i in range(len(M0)):
         def fun(m0):
-            xxx = wdot_dyn(M0[i],M1[i],m0,e1[i],e2[i],P1[i],P2[i],w1[i],inc[i]) - wdot[i] #+ wdot_GR(M0[i],M1[i],e1[i],P1[i])+3.7
+            xxx = wdot_dyn(M0[i],M1[i],m0,e1[i],e2[i],P1[i],P2[i],w1[i],inc[i]) - wdot[i] + wdot_GR(M0[i],M1[i],e1[i],P1[i])
             # print(xxx)
             return xxx
         Mass = sp.optimize.root(fun,0.01)
@@ -773,10 +773,22 @@ def get_Tstab(M0,M1,P1,P2,e2):
     
     return T_stab(M0,M1,a1,a2,e2,P2)
 
-def H_W_stab_lim(a,e):
+def AaM_stab(M0,M1,m2,a1,e2):
+    q=m2/(M0+M1)
+    C = 2.8
+    return C*((1+q)*(1+e2)/(1-e2)**(0.5))**(2/5)*a1
+
+def get_AaM_stab(M0,M1,m2,P1,e2):
+    a = sma_tot(P1,M0,M1)
+    rstab = AaM_stab(M0,M1,m2,a,e2)
+    P_stab = P_from_sma(rstab,M0+M1,m2)
+    return P_stab
+    
+
+def HW_stab_lim(a,e):
     return 2.278 + 3.824*e - 1.71*e**2
 
-def H_W_stab_lim_ext(a,e,mu):
+def HW_stab_lim_ext(a,e,mu):
     return 1.6 +5.1*e - 2.22*e**2 + 4.12*mu - 4.27*e*mu - 5.09*mu**2
 
 def get_HW_stab(M0,M1,P,e,ext=True):
@@ -784,9 +796,9 @@ def get_HW_stab(M0,M1,P,e,ext=True):
     a = sma_tot(P,M0,M1)
     mu = min(M1/(M0+M1),M0/(M0+M1))
     if ext:
-        a_pl = H_W_stab_lim_ext(a, e, mu)*a
+        a_pl = HW_stab_lim_ext(a, e, mu)*a
     else:
-        a_pl = H_W_stab_lim(a, e)*a
+        a_pl = HW_stab_lim(a, e)*a
     
     P_pl = P_from_sma(a_pl, M0+M1)
     

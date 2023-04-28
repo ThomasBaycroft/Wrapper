@@ -49,6 +49,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
         posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_P0']*posterior_file['KO_phi0']/2/np.pi
         posterior_file['KO_w0'] = centre_angles(posterior_file['KO_w0'])
         posterior_file['KO_phi0'] = centre_angles(posterior_file['KO_phi0'])
+        posterior_file['HW_stab_a'] = fcs.HW_stab_lim_ext(posterior_file['a_pri']+posterior_file['a_sec'], posterior_file['KO_ecc0'], posterior_file['M_sec']/(posterior_file['M_pri']+posterior_file['M_sec']))*(posterior_file['a_pri']+posterior_file['a_sec'])
         if nKOs >1:
             for i in range(1,nKOs):
                 #calculate the mass of any additional known objects
@@ -61,6 +62,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
                 posterior_file['KO_Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['KO_P'+str(i)]*posterior_file['KO_phi'+str(i)]/2/np.pi
                 posterior_file['KO_w'+str(i)] = centre_angles(posterior_file['KO_w'+str(i)])
                 posterior_file['KO_phi'+str(i)] = centre_angles(posterior_file['KO_phi'+str(i)])
+                posterior_file['rp_KO_'+str(i)] = posterior_file['a_KO_'+str(i)]*(1-posterior_file['KO_ecc'+str(i)])
     
         for i in range(maxNp):
             #get indices of where no planet is found for this column to make the masses zero
@@ -75,6 +77,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
             posterior_file['Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi
             posterior_file['w'+str(i)] = centre_angles(posterior_file['w'+str(i)])
             posterior_file['phi'+str(i)] = centre_angles(posterior_file['phi'+str(i)])
+            posterior_file['rp_pl_'+str(i)] = posterior_file['a_pl_'+str(i)]*(1-posterior_file['ecc'+str(i)])
     
         
     else:
