@@ -237,7 +237,7 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0],enfnp=0):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0],units='kms',enfnp=0):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -333,7 +333,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         #     rvdata_pri = rvdata[['bjd','vrad','svrad']]
         
         
-        primary = RV_planets(rvdata_pri,instruments[i],bis_and_FWHM=bis_fw)
+        primary = RV_planets(rvdata_pri,instruments[i],bis_and_FWHM=bis_fw,RV_units=units)
         if len(datafiles)>=2 and i+1<len(datafiles):
             primary.add_offset(MaxLiSolution['offset'+str(i+1)])
         primary.add_planet(numpl,MaxLiSolution)
@@ -346,7 +346,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         if binary:
             primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
             if SB2:
-                secondary = RV_planets(rvdata_sec,instruments[i])
+                secondary = RV_planets(rvdata_sec,instruments[i],RV_units=units)
                 if i>=1:
                     secondary.add_offset(MaxLiSolution['offset_sec'+str(i)])
                 secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0),M0=float(MaxLiSolution['M_sec']),M1=float(MaxLiSolution['M_pri']))
