@@ -60,13 +60,13 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
         ax.text(3*np.pi/2,max(r)*1.3,'min dist ratio to secondary ='+str(round(min2,2))+'  ',ha='left')
         
    
-def plot_circumbinary(Bin_P,M1,M2,Bin_e,Bin_w,pl_Ps,pl_Ms,pl_es,pl_ws,timeseries=[],tpers=[],SB2=False,ax=None,alpha=1,text=True,c=['r','b','g','m','c','darkviolet','orange'],ls='-'):
+def plot_circumbinary(Bin_P,M1,M2,Bin_e,Bin_w,pl_Ps,pl_Ms,pl_es,pl_ws,timeseries=[],tpers=[],SB2=False,ax=None,fig=None,alpha=1,text=True,c=['r','b','g','m','c','darkviolet','orange'],ls='-'):
     pl_Ms = [mass*Mj/Ms for mass in pl_Ms]
     masses = np.array([M1,M2]+pl_Ms)
     Periods = np.array([Bin_P,Bin_P]+pl_Ps)
     eccs = np.array([Bin_e,Bin_e]+pl_es)
     omegas = np.array([Bin_w-np.pi,Bin_w]+pl_ws)
-    plot_orbits(masses,Periods,eccs,omegas,circumbinary=True,timeseries=timeseries,tpers=tpers,SB2=SB2,ax=ax,alpha=alpha,text=text,cs=c,ls=ls)
+    plot_orbits(masses,Periods,eccs,omegas,circumbinary=True,timeseries=timeseries,tpers=tpers,SB2=SB2,ax=ax,fig=fig,alpha=alpha,text=text,cs=c,ls=ls)
     
 def phase(t, P, T0, phi_max=1):
     """
