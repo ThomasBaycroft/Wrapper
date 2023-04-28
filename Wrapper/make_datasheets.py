@@ -370,11 +370,11 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
         plot = True
         Bin_P,M1,M2,Bin_e,Bin_w = float(MaxLiSolution['KO_P0']),float(MaxLiSolution['M_pri']),float(MaxLiSolution['M_sec']),float(MaxLiSolution['KO_ecc0']),float(MaxLiSolution['KO_w0'])
         Tpers = [float(MaxLiSolution['Tper_bin']),float(MaxLiSolution['Tper_bin'])]+Tpers
-        op.plot_circumbinary(Bin_P, M1, M2, Bin_e, Bin_w, pl_Ps, pl_Ms, pl_es, pl_ws,timeseries=times,tpers=Tpers,SB2=SB2,ax=ax2)
+        op.plot_circumbinary(Bin_P, M1, M2, Bin_e, Bin_w, pl_Ps, pl_Ms, pl_es, pl_ws,timeseries=times,tpers=Tpers,SB2=SB2,ax=ax2,fig=fig)
     else:
         if numpl >= 1 or nKOs >=1:
             plot = True
-            op.plot_orbits(np.array(pl_Ms), np.array(pl_Ps), np.array(pl_Ps), np.array(pl_ws),timeseries=np.array(times),tpers=np.array(Tpers),ax=ax2)
+            op.plot_orbits(np.array(pl_Ms), np.array(pl_Ps), np.array(pl_Ps), np.array(pl_ws),timeseries=np.array(times),tpers=np.array(Tpers),ax=ax2,fig=fig)
     
     if plot:
         fig.set_size_inches(5,5)

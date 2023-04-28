@@ -19,7 +19,7 @@ Mj = cst.M_jup.value
 def semi_major_axis(M_tot,P):
     return ((P*24*3600)**2*G*(M_tot)*Ms/(4*np.pi**2))**(1/3)/AU
 
-def plot_orbits(Masses,Periods,eccs,omegas,ax=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-'):
+def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-'):
     M_tot = np.sum(Masses)
     smas = semi_major_axis(M_tot,Periods)
     numbod = len(Masses)
