@@ -338,6 +338,9 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     for i,data in enumerate(pri_data_list):
         ax = plt.subplot(gs[i,0])
         ax.errorbar(data.bjds,data.residuals(),yerr=data.svrad,fmt='.',c='b',ecolor='darkgrey')
+        if SB2:
+            dat = sec_data_list[i]
+            ax.errorbar(dat.bjds,dat.residuals(),yerr=dat.svrad,fmt='.',c='b',fc=None,ecolor='darkgrey')
         ax.set(xlabel='date (bjd)',ylabel='Res (m/s)')
         leftlim = ax.axes.get_xlim()[0]
         toplim = ax.axes.get_ylim()[1]

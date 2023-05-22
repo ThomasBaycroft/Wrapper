@@ -404,6 +404,7 @@ def sma_tot(P,M0,M1=0):
         M1: Mass or second body (M_sun)
     This uses Kepler's 3rd law, so sem-major axis is that of the combined 
     orbit rather than of an individual body around the centre of mass
+    returns a: semimajor axis (AU)
     '''
     return ((P*24*3600)**2*G*(M0+M1)*Ms/(4*np.pi**2))**(1/3)/AU
 
@@ -650,7 +651,6 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
 
 def vtan(M0,M1,P):
     a0,a1=sma_2body(P,M0,M1)
-    print(a0+a1,a1*AU)
     v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
     return v_circ*M1/M0
 
@@ -663,6 +663,20 @@ def vtan2_ecc(M0,M1,atot):
     a1 = atot*M0/(M0+M1)
     v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
     return v_circ*M1/M0
+
+def vtan_ecc(M0,M1,P,ecc,f):
+    '''
+    Calculate tangential velocity caused and instantaneus time where
+        f = true anomaly
+    by an orbiting body with
+        M1 = mass (M_sun)
+        ecc = eccentricity
+        P = orbital period
+    around a central body with 
+        M0 = mass (M_sun)
+    '''
+    a = sma_tot(P,M0,M1)*AU
+    return (G*(M1*Ms)**2/(M0*Ms+M1*Ms))**(1/2)*(2*(1+ecc*np.cos(f))/a/(1-ecc**2) - 1/a)**(1/2)
 
 #################################################
 #ETV funtions
