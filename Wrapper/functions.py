@@ -9,6 +9,7 @@ Created on Thu Dec 22 09:11:27 2022
 import numpy as np 
 import scipy as sp
 from astropy import constants
+from PyAstronomy.pyTiming import pyPeriod
 pi = np.pi
 Ms = constants.M_sun.value
 c = constants.c.value
@@ -817,6 +818,49 @@ def get_HW_stab(M0,M1,P,e,ext=True):
     P_pl = P_from_sma(a_pl, M0+M1)
     
     return P_pl
+
+
+######################################
+#Lombe-Scargle
+######################################
+
+
+def get_spectral_window_function(freqs, times):
+    """
+    Function to calculate the spectral window function of a series
+    of observations given an array of test frequencies.
+    (Roberts et al. 1987, Dawson & Fabrycky 2018)
+    
+    Parameters
+    ----------
+    freqs : array_like
+        An array of test frequencies.
+    times : array_like
+        An array of times at which the observations were taken.
+    
+    Returns
+    -------
+    array_like
+        The spectral window function of the observations for the given
+        test frequencies.
+    """
+    w_v = np.zeros(freqs.shape)
+    for idx, freq in enumerate(freqs):
+        w_v[idx] = np.sum(np.exp(-2j * np.pi * freq * times)) / len(times)
+    return np.abs(w_v)
+
+def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0.01,0.001])):
+    
+    fbeg, fend = 1/p_range[1], 1/p_range[0]
+    
+    clp_rv = pyPeriod.Gls((times,rvs,errs),fbeg=fbeg,fend=fend)
+    
+    # Find the frequency with the highest power
+    max_frequency = clp_rv.freq[np.argmax(clp_rv.power)]
+    
+    plevels = clp_rv.powerLevel(fapLevels)
+    
+    return clp_rv.freq, clp_rv.power, plevels, max_frequency
 
 # import matplotlib.pyplot as plt
 # import time

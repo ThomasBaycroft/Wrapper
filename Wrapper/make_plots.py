@@ -34,22 +34,26 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     
     sec_fill = False
     
-    num = pri_data_list[0].num_bodies #+1
+    num = pri_data_list[0].num_bodies -1
     fig, ax = plt.subplots(num,1,tight_layout=True,figsize=(6,num*8))
     tot_phas = []
     tot_rv = []
+    tot_err = []
     for i,data in enumerate(pri_data_list):
         lines = i==0
         j = 0
-        if data.binary:
-            plot_rv_orbit(ax[j],data.binary_orbit,data,'binary',lines=lines,colour=colours[i],inflate_errors=inflate_errors)
-            j+=1
+        # if data.binary:
+        #     plot_rv_orbit(ax[j],data.binary_orbit,data,'binary',lines=lines,colour=colours[i],inflate_errors=inflate_errors)
+        #     j+=1
         for k in range(data.numpl):
-            plot_rv_orbit(ax[j],data.planet_orbits[k],data,0,lines=lines,colour=colours[i],inflate_errors=inflate_errors)
+            plot_rv_orbit(ax,data.planet_orbits[k],data,0,lines=lines,colour=colours[i],inflate_errors=inflate_errors)
+            # plot_rv_orbit(ax[j],data.planet_orbits[k],data,0,lines=lines,colour=colours[i],inflate_errors=inflate_errors)
             j+=1
             tot_rv += list(data.rv_curve_planet(0))
             tot_phas += list(data.planet_orbits[k].phase(data.bjds))
-        ax[j-1].set(xlabel='phase')
+            tot_err += list(data.svrad)
+        ax.set(xlabel='phase')
+        # ax[j-1].set(xlabel='phase')
         # plot_rv_orbit(ax[j],data.planet_orbits[k],data,'residuals_long',lines=lines,colour=colours[i],inflate_errors=inflate_errors)
     
     if i==0:
@@ -59,17 +63,20 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     for i,data in enumerate(sec_data_list):
         lines = i==0
         j = 0
-        if data.binary:
-            plot_rv_orbit(ax[j],data.binary_orbit,data,'binary',lines=lines,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
-            j+=1
+        # if data.binary:
+        #     plot_rv_orbit(ax[j],data.binary_orbit,data,'binary',lines=lines,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
+        #     j+=1
         for k in range(data.numpl):
-            plot_rv_orbit(ax[j],data.planet_orbits[k],data,0,lines=False,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
+            plot_rv_orbit(ax,data.planet_orbits[k],data,0,lines=False,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
+            # plot_rv_orbit(ax[j],data.planet_orbits[k],data,0,lines=False,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
             j+=1
             tot_rv += list(data.rv_curve_planet(0))
             tot_phas += list(data.planet_orbits[k].phase(data.bjds))
+            tot_err += list(data.svrad)
         # plot_rv_orbit(ax[j],data.planet_orbits[k],data,'residuals_long',lines=lines,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
-        
-    plot_rv_phase_binned(ax[1],np.array(tot_phas),np.array(tot_rv))
+    
+    plot_rv_phase_binned(ax,np.array(tot_phas),np.array(tot_rv),np.array(tot_err))    
+    # plot_rv_phase_binned(ax[1],np.array(tot_phas),np.array(tot_rv),np.array(tot_err))
    
     return fig, ax
 
@@ -151,7 +158,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
         ax.axhline(0,c='grey',ls='--')
         ax.set(xlim=[-0.1,1.1],ylabel=r'RV (m s$^{-1}$)')
         
-def plot_rv_phase_binned(ax,phase,rvdata,numbins=10,mark='8',colour='black'):
+def plot_rv_phase_binned(ax,phase,rvdata,rverrs,numbins=10,mark='8',colour='black'):
     
     phase = np.array(phase)
     bins = np.linspace(0,1,numbins+1)
@@ -162,9 +169,10 @@ def plot_rv_phase_binned(ax,phase,rvdata,numbins=10,mark='8',colour='black'):
     for i in range(numbins):
         ind = np.logical_and(phase>=bins[i],phase<bins[i+1])
         xax.append(np.mean(phase[ind]))
-        xerrs.append(np.std(phase[ind]))
+        xerrs.append(np.std(phase[ind])/np.sqrt(sum(ind)))
         points.append(np.mean(rvdata[ind]))
-        errs.append(np.std(rvdata[ind]))
+        errs.append(np.std(rvdata[ind])/np.sqrt(sum(ind)))
+        # errs.append(np.mean(rverrs[ind]))
     ax.errorbar(xax,points,xerr=xerrs,yerr=errs,fmt=mark,c=colour,mfc='none',markersize=10.,markeredgewidth=1.3)
                                  
 
