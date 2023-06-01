@@ -421,7 +421,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             params.append(['offset',np.round(float(MaxLiSolution['offset'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
         if SB2:
             if i >=1:
-                param = posteriors_single['offest_sec'+str(i)][inds]
+                param = posteriors_single['offset_sec'+str(i)][inds]
                 params.append(['offset_sec',np.round(float(MaxLiSolution['offset_sec'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
             sec = secondaries[i]
             merr2,rms2,jit2 = round(sec.mean_rv_err(),4),round(sec.rms(),4),round(sec.jitter,4)
