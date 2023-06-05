@@ -265,7 +265,7 @@ def masses(SB2,K,P,e,M1=1,q=1):
         M1 = (mass_func*(1+q)**2)/Ms
         M2 = M1*q
     else:
-        M2 = get_mass(K,M1,P,e)
+        M2 = get_mass(K,M1,P,e)[0]
             
     return M1,M2
 
@@ -415,7 +415,7 @@ def sma_2body(P,M0,M1):
         P: Period (days)
         M0: Central mass (M_sun)
         M1: Mass or second body (M_sun)
-    Returns the semi-major axis of each body's orbit about the centre of mass
+    Returns the semi-major axis of each body's orbit about the centre of mass (AU)
     '''
     a_tot = sma_tot(P,M0,M1)
     a0 = a_tot*M1/(M0+M1)
@@ -435,9 +435,11 @@ def P_from_sma(a,M0,M1=0):
 
 
 #################################################
-#Calculation of wdot, the apsidal precession rate, due the dynamics of a 3rd body,
+#All things wdot:
+#Calculating the apsidal precession rate due the dynamics of a 3rd body,
 #the rotational effect and due to GR (in the assumtion of an eclipsing binary and a
 #transiting planet) as in Baycroft et al. 2023
+# ETVs from apsidal precession
 #################################################
 
 def wdot_dyn(M0,M1,M2,e1,e2,P1,P2,w1,inc):
@@ -645,6 +647,41 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
     else:
         ret = masses[0]
     return ret
+
+def delT(a,e,w0,wdot,t):
+    '''
+    Calculates change in eclipse time relative to a linear ephemeris given:
+        a: semi-major axis of the eclipsing body about the centre of mass(AU)
+        e: eccentricity
+        w0: initial argument of pericentre (of the eclipsing body) rad
+        wdot: apsidal precession rate (arcsec/yr)
+        t: time after initialisation at which we are measuring (days)
+    returns dT in seconds
+    '''
+    
+    dw = t*wdot/365.25/3600*np.pi/180 #dw in radians
+    
+    return a*AU*(1-e**2)/c*(1/(1-e*np.sin(w0)) - 1/(1-e*np.sin(w0+dw)))
+
+def delTs_from_wdot(M0,M1,P,e,w0,wdot,t):
+    '''
+    Calculates change in eclipse time relative to a linear ephemeris given:
+        M0: Mass of primary (Msun)
+        M1: Mass of secondary (Msun)
+        P: period of binary (days)
+        e: eccentricity
+        w0: initial argument of pericentre (of the eclipsing body) rad
+        wdot: apsidal precession rate (arcsec/yr)
+        t: time after initialisation at which we are measuring (days)
+    returns change in eclipse time for the primary eclipse and secondary eclipse in seconds
+    '''
+    a0,a1 = sma_2body(P, M0, M1)
+    
+    dT_pri = delT(a1, e, w0, wdot, t)
+    dT_sec = delT(a0, e, w0-np.pi, wdot, t)
+    
+    return dT_pri,dT_sec
+
 
 #################################################
 #astrometry functions

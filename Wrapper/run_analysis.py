@@ -180,8 +180,9 @@ def calc_nump_variables(posterior_file,loc=None):
         Bayes_factors[i] = max(np.sum([posterior_file['Np']==float(i+1)]),1)/max(np.sum([posterior_file['Np']==float(i)]),1)
         if Bayes_factors[i] >=10:
             numpl = i+1
-    i+=1
-    Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
+    if maxNp>=1:
+        i+=1
+        Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
     
     Bayes_factors_samps = Bayes_factors
     if loc != None:
