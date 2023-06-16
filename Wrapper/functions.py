@@ -442,6 +442,8 @@ def P_from_sma(a,M0,M1=0):
 # ETVs from apsidal precession
 #################################################
 
+asyr_to_radday = np.pi/180/3600/365.25
+
 def wdot_dyn(M0,M1,M2,e1,e2,P1,P2,w1,inc):
     '''
     Calculate the rate of apsidal precession of an orbit due to 
@@ -650,7 +652,7 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
 
 def delT(a,e,w0,wdot,t):
     '''
-    Calculates change in eclipse time relative to a linear ephemeris given:
+    Calculates change in eclipse time from LTTE relative to a linear ephemeris given:
         a: semi-major axis of the eclipsing body about the centre of mass(AU)
         e: eccentricity
         w0: initial argument of pericentre (of the eclipsing body) rad
@@ -665,7 +667,7 @@ def delT(a,e,w0,wdot,t):
 
 def delTs_from_wdot(M0,M1,P,e,w0,wdot,t):
     '''
-    Calculates change in eclipse time relative to a linear ephemeris given:
+    Calculates change in eclipse time from LTTE relative to a linear ephemeris given:
         M0: Mass of primary (Msun)
         M1: Mass of secondary (Msun)
         P: period of binary (days)
@@ -681,6 +683,49 @@ def delTs_from_wdot(M0,M1,P,e,w0,wdot,t):
     dT_sec = delT(a0, e, w0-np.pi, wdot, t)
     
     return dT_pri,dT_sec
+
+def X_parameter(e,w):
+    return np.pi + 2*np.arctan(e*np.cos(w)/((1-e**2)**(1/2)))
+
+def w_from_X(e,X):
+    return np.arccos((1-e**2)**(1/2)/e*np.tan((X-np.pi)/2))
+
+def w_from_ts(tpri,tsec,P,e):
+    
+    c = 2*np.pi*(tsec-tpri)/P
+    
+    def fun(x):
+        return x - np.sin(x) - c
+    X = sp.optimize.root(fun,np.pi)
+    
+    w = w_from_X(e, X[0])
+    
+    return(w)
+
+def tsec(tpri,e,w,P):
+    X = X_parameter(e, w)
+    return P*(X - np.sin(X))/2/np.pi + tpri
+
+def tpri(tsec,e,w,P):
+    X = X_parameter(e, w)
+    return -P*(X - np.sin(X))/2/np.pi + tsec
+
+def wdot_tpri_diff(w0,wdot,time,P,e):
+    '''
+    Calculate change in offset between primary and secondary eclipses due to apsidal precession of the binary given:
+        w0: initial w (rad)
+        wdot: precession rate (arcsec/yr)
+        time: timespan between measurements
+        P: period of the binary (days)
+        e: eccentricity of the binary 
+    returns offset in seconds
+    '''
+    w1 = w0 + time*wdot*asyr_to_radday
+    
+    tpri1 = tpri(0,e,w0,P)
+    tpri2 = tpri(0,e,w1,P)
+    
+    return (tpri1 - tpri2)*24*3600
 
 
 #################################################
