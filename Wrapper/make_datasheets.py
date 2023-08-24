@@ -490,9 +490,9 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     if SB2:
         times,rvs,errs=[],[],[]
         for pri in primaries:
-            times += pri.bjds
-            rvs += pri.rvs_no_binary()
-            errs += pri.svrad
+            times += list(pri.bjds)
+            rvs += list(pri.rvs_no_binary())
+            errs += list(pri.svrad)
         freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
         ax9 = plt.subplot(gs4[0])
         ax9.plot(1/freqs,power)
@@ -506,9 +506,9 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
         
         times,rvs,errs=[],[],[]
         for sec in secondaries:
-            times += sec.bjds
-            rvs += sec.rvs_no_binary()
-            errs += sec.svrad
+            times += list(sec.bjds)
+            rvs += list(sec.rvs_no_binary())
+            errs += list(sec.svrad)
         freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
         ax10 = plt.subplot(gs4[1])
         ax10.plot(1/freqs,power)
@@ -522,9 +522,9 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     else:
         times,rvs,errs=[],[],[]
         for pri in primaries:
-            times += pri.bjds
-            rvs += pri.rvs_no_binary()
-            errs += pri.svrad
+            times += list(pri.bjds)
+            rvs += list(pri.rvs_no_binary())
+            errs += list(pri.svrad)
         freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
         ax9 = plt.subplot(gs4[:])
         ax9.plot(1/freqs,power)
