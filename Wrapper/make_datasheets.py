@@ -399,7 +399,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     
     # fig = plt.figure(constrained_layout=True)
     fig = plt.figure()
-    gs = GridSpec(5,1,figure=fig)
+    gs = GridSpec(6,1,figure=fig)
     
     gs1 = gs[0:2,:].subgridspec(1,2)
     ax1 = plt.subplot(gs1[0,0])
