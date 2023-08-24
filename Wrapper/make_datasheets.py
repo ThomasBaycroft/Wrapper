@@ -394,7 +394,7 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     
         os.system('rm '+outputloc+'orbit.pdf')
     
-def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,times,binary=False,P_prior=[]):
+def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,times,primaries,secondaries,binary=False,P_prior=[],SB2=False):
     
     
     # fig = plt.figure(constrained_layout=True)
@@ -477,14 +477,65 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
       
     ax8 = plt.subplot(gs[4,0])
     if P_prior == []:
-        freqs = np.linspace(1/2000,1/1,len(times)*18)
+        f1,f2 = 1/2000,1/1
     else:
-        freqs = np.linspace(1/P_prior[1],1/P_prior[0],len(times)*18)
-    
+        f1,f2 = 1/P_prior[1],1/P_prior[0]
+    freqs = np.linspace(f1,f2,len(times)*18)
     wfpower = fcs.get_spectral_window_function(freqs, times)
     ax8.plot(1/freqs,wfpower,c='b')
     ax8.semilogx()
     ax8.set(xlabel='Period (days)',ylabel='Window function')
+    
+    gs4 = gs[5,:].subgridspec(1,2)
+    if SB2:
+        times,rvs,errs=[],[],[]
+        for pri in primaries:
+            times += pri.bjds
+            rvs += pri.rvs_no_binary()
+            errs += pri.svrad
+        freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
+        ax9 = plt.subplot(gs4[0])
+        ax9.plot(1/freqs,power)
+        ax9.semilogx()
+        for i,lev in enumerate(plevels):
+            ax9.axhline(lev,ls='--',c='grey',alpha=0.8)
+            ax9.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
+        ax9.axvline(1/maxfreq,c='g')
+        ax9.axvline(365.25,c='r',ls='.')
+        ax9.set(xlabel='Period (days)',ylabel='power',title='Primary')
+        
+        times,rvs,errs=[],[],[]
+        for sec in secondaries:
+            times += sec.bjds
+            rvs += sec.rvs_no_binary()
+            errs += sec.svrad
+        freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
+        ax10 = plt.subplot(gs4[1])
+        ax10.plot(1/freqs,power)
+        ax10.semilogx()
+        for i,lev in enumerate(plevels):
+            ax10.axhline(lev,ls='--',c='grey',alpha=0.8)
+            ax10.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
+        ax10.axvline(1/maxfreq,c='g')
+        ax10.axvline(365.25,c='r',ls='.')
+        ax10.set(xlabel='Period (days)',ylabel='power',title='Secondary')
+    else:
+        times,rvs,errs=[],[],[]
+        for pri in primaries:
+            times += pri.bjds
+            rvs += pri.rvs_no_binary()
+            errs += pri.svrad
+        freqs,power,faplevels,plevels,maxfreq = fcs.GLS_periodogram(times, rvs, errs,p_range=[1/f2,1/f1])
+        ax9 = plt.subplot(gs4[:])
+        ax9.plot(1/freqs,power)
+        ax9.semilogx()
+        for i,lev in enumerate(plevels):
+            ax9.axhline(lev,ls='--',c='grey',alpha=0.8)
+            ax9.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
+        ax9.axvline(1/maxfreq,c='g')
+        ax9.axvline(365.25,c='r',ls='.')
+        ax9.set(xlabel='Period (days)',ylabel='power')
+            
     
     fig.set_size_inches(10.25,15.75)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')

@@ -161,7 +161,16 @@ class RV_planets:
     def add_orbit_to_data(self,data_times,data_values,orbit):
         
         return data_values + orbit.RV_keplerian_sub(data_times)
+    
+    def rvs_no_binary(self):
         
+        if self.binary:
+            rvs = self.remove_orbit_from_data(self.bjds,self.vrad,self.binary_orbit)
+        else:
+            rvs = self.vrad
+            
+        return rvs
+    
     def remove_drifts(self):
         
         tmid = (max(self.bjds)+min(self.bjds))/2

@@ -178,7 +178,7 @@ def calc_nump_variables(posterior_file,loc=None):
     for i in range(maxNp):
         Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
         Bayes_factors[i] = max(np.sum([posterior_file['Np']==float(i+1)]),1)/max(np.sum([posterior_file['Np']==float(i)]),1)
-        if Bayes_factors[i] >=10:
+        if Bayes_factors[i] >=7:
             numpl = i+1
     if maxNp>=1:
         i+=1
@@ -402,7 +402,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     md.make_timeseries_sheet(system,outputloc,datasheet_num,instruments, MaxLiSolution, numpl, nKOs, primaries,sec_data_list=secondaries,binary=binary,SB2=SB2,P_prior=P_prior)    
     datasheet_num +=1 
     fiptip = FIP_TIP(loc, maxNp, P_prior, dataspan)
-    md.make_extras_sheet(system,outputloc,datasheet_num,full_posteriors, indices_full, MaxLiSolution,fiptip,times,binary=binary)
+    md.make_extras_sheet(system,outputloc,datasheet_num,full_posteriors, indices_full, MaxLiSolution,fiptip,times,primaries,secondaries,binary=binary,SB2=SB2)
     datasheet_num+=1
     md.make_diagnostics(system, outputloc, datasheet_num, loc)
     
