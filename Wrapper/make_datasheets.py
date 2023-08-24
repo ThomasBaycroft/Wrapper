@@ -483,7 +483,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     # if max(1-fiptip[1]) >= 0.2:
     #     axs[1,1].text(pers[np.argmax(tiper_posts)],np.log10(max(tiper_posts)),str(round(max(tiper_posts),2)),ha='center')
       
-    ax8 = plt.subplot(gs[4,0])
+    ax8 = plt.subplot(gs[3,0])
     if P_prior == []:
         f1,f2 = 1/2000,1/1
     else:
