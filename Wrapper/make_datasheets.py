@@ -407,9 +407,9 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     
     # fig = plt.figure(constrained_layout=True)
     fig = plt.figure()
-    gs = GridSpec(6,1,figure=fig)
+    gs = GridSpec(5,1,figure=fig)
     
-    gs1 = gs[0:2,:].subgridspec(1,2)
+    gs1 = gs[0,:].subgridspec(1,2)
     ax1 = plt.subplot(gs1[0,0])
     ax2 = plt.subplot(gs1[0,1])
     
@@ -433,7 +433,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     ax2.semilogx()
     ax2.set(ylim=[np.median(full_posteriors.logL),max(full_posteriors.logL)+0.5],xlabel='Period (days)',ylabel=r'$log(L)$')
     
-    gs2 = gs[2,:].subgridspec(1,3)
+    gs2 = gs[1,:].subgridspec(1,3)
     ax3 = plt.subplot(gs2[0,0])
     ax4 = plt.subplot(gs2[0,1])
     ax5 = plt.subplot(gs2[0,2])
@@ -459,7 +459,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     ax5.semilogx()
     ax5.semilogy()
         
-    gs3 = gs[3,:].subgridspec(1,2)
+    gs3 = gs[2,:].subgridspec(1,2)
     ax6 = plt.subplot(gs3[0,0])
     ax7 = plt.subplot(gs3[0,1])
     
@@ -494,7 +494,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     ax8.semilogx()
     ax8.set(xlabel='Period (days)',ylabel='Window function')
     
-    gs4 = gs[5,:].subgridspec(1,2)
+    gs4 = gs[4,:].subgridspec(1,2)
     if SB2:
         times,rvs,errs=[],[],[]
         for pri in primaries:
