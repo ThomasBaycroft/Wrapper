@@ -17,6 +17,7 @@ from PyPDF2 import PdfMerger
 # import pykima
 from . import make_plots as mplt
 from . import orbit_plot as op
+from . import functions as fcs
 import os
 
 colours = ['r','b','g','m','c','darkviolet','orange']
@@ -328,7 +329,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     os.system('rm '+outputloc+'corner.pdf')
     
-def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolution,numpl,nKOs,pri_data_list,sec_data_list=[],binary=False,SB2=False):
+def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolution,numpl,nKOs,pri_data_list,sec_data_list=[],binary=False,SB2=False,P_prior=[1.0,2000]):
     
     l = len(pri_data_list)
     
@@ -377,7 +378,7 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     else:
         if numpl >= 1 or nKOs >=1:
             plot = True
-            op.plot_orbits(np.array(pl_Ms), np.array(pl_Ps), np.array(pl_Ps), np.array(pl_ws),timeseries=np.array(times),tpers=np.array(Tpers),ax=ax2,fig=fig)
+            op.plot_orbits(np.array(pl_Ms), np.array(pl_Ps), np.array(pl_es), np.array(pl_ws),timeseries=np.array(times),tpers=np.array(Tpers),ax=ax2,fig=fig)
     
     if plot:
         fig.set_size_inches(5,5)
@@ -393,12 +394,12 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     
         os.system('rm '+outputloc+'orbit.pdf')
     
-def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,binary=False):
+def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxLiSolution,fiptip,times,binary=False,P_prior=[]):
     
     
     # fig = plt.figure(constrained_layout=True)
     fig = plt.figure()
-    gs = GridSpec(4,1,figure=fig)
+    gs = GridSpec(5,1,figure=fig)
     
     gs1 = gs[0:2,:].subgridspec(1,2)
     ax1 = plt.subplot(gs1[0,0])
@@ -474,8 +475,18 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     # if max(1-fiptip[1]) >= 0.2:
     #     axs[1,1].text(pers[np.argmax(tiper_posts)],np.log10(max(tiper_posts)),str(round(max(tiper_posts),2)),ha='center')
       
+    ax8 = plt.subplot(gs[4,0])
+    if P_prior == []:
+        freqs = np.linspace(1/2000,1/1,len(times)*18)
+    else:
+        freqs = np.linspace(1/P_prior[1],1/P_prior[0],len(times)*18)
     
-    fig.set_size_inches(10.25,13.75)
+    wfpower = fcs.get_spectral_window_function(freqs, times)
+    ax8.plot(1/freqs,wfpower,c='b')
+    ax8.semilogx()
+    ax8.set(xlabel='Period (days)',ylabel='Window function')
+    
+    fig.set_size_inches(10.25,15.75)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')
     
     

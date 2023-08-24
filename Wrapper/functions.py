@@ -10,6 +10,7 @@ import numpy as np
 import scipy as sp
 from astropy import constants
 # from PyAstronomy.pyTiming import pyPeriod
+
 pi = np.pi
 Ms = constants.M_sun.value
 c = constants.c.value
@@ -98,6 +99,16 @@ def ecc_anomaly(M, e):
     # no convergence, return the best estimate
     return E
 
+def ellip_rectang(t,P,e,Tper):
+    
+    M = 2.*pi * (t-Tper)/P
+    E = ecc_anomaly(M, e)
+    
+    X = np.cos(E) - e
+    Y = (1-e**2)**(0.5)*np.sin(E)
+    
+    return X,Y
+
 
 def phase(t, P, T0, phi_max=1):
     """
@@ -185,11 +196,10 @@ def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, rela
         vel += vsys + extra_vel
     return vel
 
-def post_newtonian(K0, nu, ecc, w, P, M0, R0, M1, relativistic_correction, tidal_correction):
+def post_newtonian(K0, nu, ecc, w, P, M0, R0, M1, relativistic_correction, tidal_correction,sini=1):
     '''
     Calculates the post-newtonian contributions as in Baycroft et. al 2023
     '''
-    sini = 1
     v = 0.0
     if relativistic_correction or tidal_correction:
         if M1 == None:
@@ -265,7 +275,7 @@ def masses(SB2,K,P,e,M1=1,q=1):
         M1 = (mass_func*(1+q)**2)/Ms
         M2 = M1*q
     else:
-        M2 = get_mass(K,M1,P,e)[0]
+        M2 = get_mass(K,M1,P,e)
             
     return M1,M2
 
@@ -443,6 +453,52 @@ def P_from_sma(a,M0,M1=0):
 #################################################
 
 asyr_to_radday = np.pi/180/3600/365.25
+
+def wdot_dyn_full(M0,M1,M2,e1,e2,P1,P2,w1,W1,W2,I1,I2):
+    '''
+    Calculate the rate of apsidal precession of an orbit due to 
+    an external perturber given:
+        M0: Mass of primary (M_sun)
+        M1: Mass of secondary (M_sun)
+        M2: Mass of perturber (M_sun)
+        e1: eccentricity of inner orbit
+        e2: eccentricity of outer orbit
+        P1: orbital period of inner orbit (days)
+        P2: orbital period of outer orbit (days)
+        w1: argument of pericentre of inner orbit (radians)
+        W1: Longitude of ascending node of inner orbit (rad)
+        W2: Longitude of ascending node of outer orbit (rad)
+        I1: inclination of inner orbit (rad)
+        I2: inclination of outer orbit (rad)
+    Returns rate of precession in arcsec/yr
+    '''
+    a1 = sma_tot(P1,M0,M1)*AU
+    a2 = sma_tot(P2,M0+M1,M2)*AU
+    
+    m0 = M0*Ms
+    m1 = M1*Ms
+    m2 = M2*Ms
+    
+    C2 = G/16*m0*m1*m2*a1**2/(m0+m1)/((1-e2**2)**(3/2))/(a2**3)
+    
+    G1 = m0*m1/(m0+m1)*(G*(m0+m1)*a1*(1-e1**2))**(1/2)
+    
+    cosi = np.sin(I1)*np.sin(I2)*np.cos(W1-W2) + np.cos(I1)*np.cos(I2)
+    
+    cosa = np.sin(I1)*np.sin(w1)*np.cos(I2) - np.sin(I2)*np.cos(w1)*np.sin(W1-W2) - np.sin(I2)*np.cos(I1)*np.sin(w1)*np.cos(W1-W2)
+    
+    dcidI = np.cos(I1)*np.sin(I2)*np.cos(W1-W2) - np.sin(I1)*np.cos(I2)
+    dcadI = np.cos(I1)*np.sin(w1)*np.cos(I2) + np.sin(I2)*np.sin(I1)*np.sin(w1)*np.cos(W1-W2)
+    
+    dhde = C2*(-24*e1 + 12*e1*cosi**2 + 60*e1*cosa**2)
+    dhdi = C2*(-12*(1-e1**2)*cosi*dcidI + 60*e1**2*cosa*dcadI)
+    
+    wdot = -(1-e1**2)/e1/G1*dhde + np.cos(I1)/np.sin(I1)/G1*dhdi
+    
+    wdot *= 180/np.pi*3600*3600*24*365.25
+    
+    return wdot
+    
 
 def wdot_dyn(M0,M1,M2,e1,e2,P1,P2,w1,inc):
     '''
@@ -761,6 +817,109 @@ def vtan_ecc(M0,M1,P,ecc,f):
     a = sma_tot(P,M0,M1)*AU
     return (G*(M1*Ms)**2/(M0*Ms+M1*Ms))**(1/2)*(2*(1+ecc*np.cos(f))/a/(1-ecc**2) - 1/a)**(1/2)
 
+def Thiele_Innes(a0,w,W,cosi):
+    A = a0*(np.cos(w)*np.cos(W) - np.sin(w)*np.sin(W)*cosi)
+    B = a0*(np.cos(w)*np.sin(W) + np.sin(w)*np.cos(W)*cosi)
+    F = -a0*(np.sin(w)*np.cos(W) + np.cos(w)*np.sin(W)*cosi)
+    G = -a0*(np.sin(w)*np.sin(W) - np.cos(w)*np.cos(W)*cosi)
+    
+    return A,B,F,G
+
+def wss(da,dd,par,mua,mud,t,psi,pf,tref):
+    T = t - tref
+    return (da + mua*T)*np.sin(psi) + (dd +mud*T)*np.cos(psi) +par*pf
+
+def wk_orb(P,Tper,e,cosi,W,w,a0,t,psi):
+    
+    A,B,F,G = Thiele_Innes(a0, w, W, cosi)
+    X,Y = ellip_rectang(t, P, e, Tper)
+    
+    return (B*X + G*Y)*np.sin(psi) + (A*X + F*Y)*np.cos(psi)
+ 
+def wk_TI(P,Tper,e,A,B,F,G,t,psi):   
+    
+    X,Y = ellip_rectang(t, P, e, Tper)
+    return (B*X + G*Y)*np.sin(psi) + (A*X + F*Y)*np.cos(psi)
+
+def ra_dec_orb(P,Tper,e,cosi,W,w,a0,t):
+    
+    A,B,F,G = Thiele_Innes(a0, w, W, cosi)
+    X,Y = ellip_rectang(t, P, e, Tper)
+    
+    return B*X + G*Y, A*X + F*Y
+
+def ra_dec_TI(A,B,F,G,P,Tper,e,t):
+    X,Y = ellip_rectang(t, P, e, Tper)
+    return B*X + G*Y, A*X + F*Y
+
+def Campbell_a(A,B,F,G):
+    u = (A**2 + B**2 + F**2 + G**2)/2
+    v = A*G - B*F
+    a = (u + ((u+v)*(u-v))**(0.5))**(0.5)
+    return a
+
+def Campbell_W_w(A,B,F,G):
+    X = np.arctan((B-F)/(G+A))
+    Y = np.arctan((B+F)/(G-A))
+    
+    if np.sin(X)*(B-F) <0:
+        X += np.pi
+        
+    if np.sin(Y)*(-B-F) <0:
+        Y+=np.pi
+
+    w = (X+Y)/2
+    W = (X-Y)/2
+    
+    
+    if W<0:
+        W+=np.pi
+        w+=np.pi
+        
+    while W < 0:
+        W += np.pi
+    
+    while W > np.pi:
+        W -= np.pi
+        
+    while w < 0:
+        w += 2*np.pi
+        
+    while w > 2*np.pi:
+        w -= 2*np.pi
+        
+    return W,w
+    
+def Campbell_i(A,B,F,G,w,W):
+    d1 = abs((A+G)*np.cos(w-W))
+    d2 = abs((F-B)*np.sin(w-W))
+    
+    d3 = abs((A-G)*np.cos(w+W))
+    d4 = abs((F+B)*np.sin(w+W))
+    
+    if d1>=d2:
+        i = 2*np.arctan((d3/d1)**(0.5))
+    else:
+        i = 2*np.arctan((d4/d2)**(0.5))
+        
+    return i
+
+def Campbell(A,B,F,G):
+    '''
+    Taken from "Halbwachs et al. 2023"
+    '''
+    
+    A,B,F,G = np.atleast_1d(A, B, F, G)
+    W,w,inc = np.zeros_like(A),np.zeros_like(A),np.zeros_like(A)
+    
+    a = Campbell_a(A, B, F, G)
+    for i in range(len(A)):
+        W[i],w[i] = Campbell_W_w(A[i], B[i], F[i], G[i])
+        inc[i] = Campbell_i(A[i], B[i], F[i], G[i], w[i], W[i])
+    
+    return a,w,W,inc
+
+
 #################################################
 #ETV funtions
 #################################################
@@ -901,6 +1060,21 @@ def get_HW_stab(M0,M1,P,e,ext=True):
     
     return P_pl
 
+def K_BBH(m1,m2,m3,pin,pout,I,ecc):
+    
+    M1 = m1*Ms
+    M2 = m2*Ms
+    M3 = m3*Ms
+    
+    M12 = M1+M2
+    M123=M12+M3
+    
+    Pin = pin*24*3600
+    Pout = pout*24*3600
+    
+    V00 = ((2*np.pi*G*(M12)**3)/((M123)**2*Pout))**(1/3)
+    
+    return M1*M2/(M12**2)*(M123/M12)**(2/3)*(Pin/Pout)**(7/3)*V00*np.sin(I)*(1-ecc)**(-7/2)
 
 ######################################
 #Lombe-Scargle

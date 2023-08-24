@@ -178,7 +178,7 @@ def calc_nump_variables(posterior_file,loc=None):
     for i in range(maxNp):
         Nps[i] = max(np.sum([posterior_file['Np']==float(i)]),1)
         Bayes_factors[i] = max(np.sum([posterior_file['Np']==float(i+1)]),1)/max(np.sum([posterior_file['Np']==float(i)]),1)
-        if Bayes_factors[i] >=50:
+        if Bayes_factors[i] >=10:
             numpl = i+1
     if maxNp>=1:
         i+=1
@@ -238,7 +238,7 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,P_prior=[1,2000],CMR=[1.0,1.0],units='kms',enfnp=0):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,studentT=False,P_prior=[1,2000],CMR=[1.0,1.0],units='kms',enfnp=0):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -346,6 +346,8 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         primary.add_drift(0,MaxLiSolution)
         if binary:
             primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
+            if studentT:
+                primary.calc_stud_T_outliers(MaxLiSolution['nu'])
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i],RV_units=units)
                 if i>=1:
@@ -358,22 +360,33 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 else:
                     secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 secondary.add_drift(0,MaxLiSolution)
+                if studentT:
+                    secondary.calc_stud_T_outliers(MaxLiSolution['nu'])
                 secondaries.append(secondary)
                 secondary.write_reses(outputloc+'datafiles/', system,prisec='_sec')
                 primary.write_reses(outputloc+'datafiles/', system,prisec='_pri')
             else:
+                if studentT:
+                    primary.calc_stud_T_outliers(MaxLiSolution['nu'])
                 primary.write_reses(outputloc+'datafiles/', system)
+        else:
+            if studentT:
+                primary.calc_stud_T_outliers(MaxLiSolution['nu'])
+            primary.write_reses(outputloc+'datafiles/', system)
         primaries.append(primary)
 
-        
         
         numdats.append(len(primary.bjds))
     
     mints=[]
     maxts=[]
+    times = []
     for pri_data in primaries:
         mints.append(min(pri_data.bjds))
         maxts.append(max(pri_data.bjds))
+        times += list(pri_data.bjds)
+        
+    times = np.sort(times)
     dataspan = float(max(maxts) - min(mints))
     
     #Make the various datasheets
@@ -386,10 +399,10 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     for i in range(numpl):
         md.make_object_sheet(system,outputloc,False,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
         datasheet_num += 1
-    md.make_timeseries_sheet(system,outputloc,datasheet_num,instruments, MaxLiSolution, numpl, nKOs, primaries,sec_data_list=secondaries,binary=binary,SB2=SB2)    
+    md.make_timeseries_sheet(system,outputloc,datasheet_num,instruments, MaxLiSolution, numpl, nKOs, primaries,sec_data_list=secondaries,binary=binary,SB2=SB2,P_prior=P_prior)    
     datasheet_num +=1 
     fiptip = FIP_TIP(loc, maxNp, P_prior, dataspan)
-    md.make_extras_sheet(system,outputloc,datasheet_num,full_posteriors, indices_full, MaxLiSolution,fiptip,binary=binary)
+    md.make_extras_sheet(system,outputloc,datasheet_num,full_posteriors, indices_full, MaxLiSolution,fiptip,times,binary=binary)
     datasheet_num+=1
     md.make_diagnostics(system, outputloc, datasheet_num, loc)
     

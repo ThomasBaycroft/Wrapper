@@ -34,7 +34,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     
     sec_fill = False
     
-    num = pri_data_list[0].num_bodies -1
+    num = pri_data_list[0].num_bodies -1 
     fig, ax = plt.subplots(num,1,tight_layout=True,figsize=(6,num*8))
     tot_phas = []
     tot_rv = []
@@ -75,7 +75,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
             tot_err += list(data.svrad)
         # plot_rv_orbit(ax[j],data.planet_orbits[k],data,'residuals_long',lines=lines,fill=sec_fill,colour=colours[i],inflate_errors=inflate_errors)
     
-    plot_rv_phase_binned(ax,np.array(tot_phas),np.array(tot_rv),np.array(tot_err))    
+    # plot_rv_phase_binned(ax,np.array(tot_phas),np.array(tot_rv),np.array(tot_err))    
     # plot_rv_phase_binned(ax[1],np.array(tot_phas),np.array(tot_rv),np.array(tot_err))
    
     return fig, ax
@@ -105,7 +105,7 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
     else:
         erbars = data.svrad
     
-    times = np.linspace(min(data.bjds),max(data.bjds),10000)
+    times = np.linspace(min(data.bjds),max(data.bjds),20000)
     if body == 'binary':
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_binary()/1000)
         ax.errorbar(orb.phase(data.bjds),data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
@@ -218,7 +218,7 @@ def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys'
     ax.set(xlim=xax,ylim=[10**lowlim,10**uplim],xlabel='Period (days)',ylabel=ylab)
     
     
-def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1):
+def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1,p_prior=[]):
     '''
     given:
         posterior_file: posterior_file with a single column for planets with the number removed (ie treated with the pfa.combine_planets function)
@@ -228,8 +228,12 @@ def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1):
     '''
     if KM != 'K':
         KM = 'M_pl_'
-    p_bins = np.histogram(posterior_file['P'],bins=np.logspace(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),numbins+1))[1]
-    histvals = np.histogram(posterior_file['P'],bins=np.logspace(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),numbins+1))[0]
+    if p_prior == []:
+        bins = np.logspace(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),numbins+1)
+    else:
+        bins = np.logspace(np.log10(p_prior[0]),np.log10(p_prior[1]),numbins+1)
+    p_bins = np.histogram(posterior_file['P'],bins=bins)[1]
+    histvals = np.histogram(posterior_file['P'],bins=bins)[0]
     KM99s=[]
     bincentres=[]
     for i in range(numbins):
