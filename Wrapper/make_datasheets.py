@@ -19,6 +19,9 @@ from . import make_plots as mplt
 from . import orbit_plot as op
 from . import functions as fcs
 import os
+from astropy import constants
+Ms = constants.M_sun.value
+Mj = constants.M_jup.value
 
 colours = ['r','b','g','m','c','darkviolet','orange']
 
@@ -249,8 +252,13 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     s = str(object_number)
     parameter_names = [r'$P$ = ',r'$K$ = ',r'$e$ = ',r'$\omega$ = ',r'$m\sin(i)$ = ',r'$a$ = ',r'$T_{per}$ = ',r'$V_{sys} = $']
-    parameter_cols = ['P'+s,'K'+s,'ecc'+s,'w'+s,'M_pl_'+s,'a_pl_'+s,'Tper'+s,'vsys']
-    parameter_units = [' days',' m/s',' ',' rad',r' $M_{\odot}$',' AU',' ',' days','m/s']
+    if MaxLiSolution['M_pl_'+s] >= 0.08:
+        parameter_cols = ['P'+s,'K'+s,'ecc'+s,'w'+s,'M_pl_'+s,'a_pl_'+s,'Tper'+s,'vsys']
+        parameter_units = [' days',' m/s',' ',' rad',r' $M_{\odot}$',' AU',' ',' days','m/s']
+    else:
+        MaxLiSolution['M_pl_j_'+s] = MaxLiSolution['M_pl_'+s]*Ms/Mj
+        parameter_cols = ['P'+s,'K'+s,'ecc'+s,'w'+s,'M_pl_j_'+s,'a_pl_'+s,'Tper'+s,'vsys']
+        parameter_units = [' days',' m/s',' ',' rad',r' $M_{\rm Jup}$',' AU',' ',' days','m/s']
     if precession:
         parameter_cols.append('wdot'+s)
         parameter_names.append(r'$\dot{\omega}$ = ')
