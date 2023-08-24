@@ -501,7 +501,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
             ax9.axhline(lev,ls='--',c='grey',alpha=0.8)
             ax9.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
         ax9.axvline(1/maxfreq,c='g')
-        ax9.axvline(365.25,c='r',ls='.')
+        ax9.axvline(365.25,c='r',ls=':')
         ax9.set(xlabel='Period (days)',ylabel='power',title='Primary')
         
         times,rvs,errs=[],[],[]
@@ -517,7 +517,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
             ax10.axhline(lev,ls='--',c='grey',alpha=0.8)
             ax10.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
         ax10.axvline(1/maxfreq,c='g')
-        ax10.axvline(365.25,c='r',ls='.')
+        ax10.axvline(365.25,c='r',ls=':')
         ax10.set(xlabel='Period (days)',ylabel='power',title='Secondary')
     else:
         times,rvs,errs=[],[],[]
@@ -533,7 +533,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
             ax9.axhline(lev,ls='--',c='grey',alpha=0.8)
             ax9.text(max(1/freqs),lev,str(faplevels[i]),ha='right')
         ax9.axvline(1/maxfreq,c='g')
-        ax9.axvline(365.25,c='r',ls='.')
+        ax9.axvline(365.25,c='r',ls=':')
         ax9.set(xlabel='Period (days)',ylabel='power')
             
     
