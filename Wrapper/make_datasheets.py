@@ -252,6 +252,8 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     s = str(object_number)
     parameter_names = [r'$P$ = ',r'$K$ = ',r'$e$ = ',r'$\omega$ = ',r'$m\sin(i)$ = ',r'$a$ = ',r'$T_{per}$ = ',r'$V_{sys} = $']
+    print(MaxLiSolution)
+    print(MaxLiSolution['M_pl_'+s])
     if MaxLiSolution['M_pl_'+s] >= 0.08:
         parameter_cols = ['P'+s,'K'+s,'ecc'+s,'w'+s,'M_pl_'+s,'a_pl_'+s,'Tper'+s,'vsys']
         parameter_units = [' days',' m/s',' ',' rad',r' $M_{\odot}$',' AU',' ',' days','m/s']
@@ -545,7 +547,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
         ax9.set(xlabel='Period (days)',ylabel='power')
             
     
-    fig.set_size_inches(10.25,15.75)
+    fig.set_size_inches(10.25,18.75)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')
     
     
