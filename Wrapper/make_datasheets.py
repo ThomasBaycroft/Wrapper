@@ -337,10 +337,10 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     os.system('rm '+outputloc+'corner.pdf')
     
-def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolution,numpl,nKOs,pri_data_list,sec_data_list=[],binary=False,SB2=False,P_prior=[1.0,2000]):
+def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolution,numpl,nKOs,pri_data_list,sec_data_list=[],binary=False,SB2=False,P_prior=[1.0,2000],drift_order=0):
     
-    l = len(pri_data_list)
-    
+    l = len(pri_data_list) + bool(drift_order>=1)
+
     fig = plt.figure(constrained_layout=True)
     gs = GridSpec(l,1,figure=fig)
     times=[]
@@ -358,6 +358,16 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
         ax.axhline(0,c='black',alpha=0.6)
         times += list(data.bjds)
         
+    if drift_order>=0:
+        ax = plt.subplot(gs[i+1,0])
+        for i,data in enumerate(pri_data_list):
+            ax.errorbar(data.bjds,data.residuals()+data.drift(),yerr=data.svrad,fmt='.',c='b',ecolor='darkgrey')
+            if SB2:
+                dat = sec_data_list[i]
+                ax.errorbar(dat.bjds,dat.residuals()+data.drift(),yerr=dat.svrad,fmt='.',c='b',mfc='none',ecolor='darkgrey')
+        cont = np.arange(min(times),max(times),0.1)
+        ax.plot(cont,pri_data_list[0].drift(times=cont),c='black',alpha=0.8)
+    
     fig.set_size_inches(7,4)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf')
     

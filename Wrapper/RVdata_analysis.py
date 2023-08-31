@@ -178,6 +178,18 @@ class RV_planets:
         drift = self.drift_params[0]*(self.bjds-tmid) +self.drift_params[1]*(self.bjds-tmid)**2 + self.drift_params[2]*(self.bjds-tmid)**3
         self.vrad -= drift
         
+    def drift(self,times='data'):
+        
+        if times == 'data':
+            times = self.bjds
+        elif times == 'cont':
+            times = np.arange(min(self.bjds),max(self.bjds),0.1)
+        
+        tmid = (max(self.bjds)+min(self.bjds))/2
+        
+        drift = self.drift_params[0]*(times-tmid) +self.drift_params[1]*(times-tmid)**2 + self.drift_params[2]*(times-tmid)**3
+        
+        return drift
         
     def residuals(self):
         

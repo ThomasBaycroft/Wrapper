@@ -238,7 +238,7 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
     return datas
     
  
-def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,studentT=False,P_prior=[1,2000],CMR=[1.0,1.0],units='kms',enfnp=0):
+def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False,SB2=False,binary=False,precession=False,GR=False,Tides=False,studentT=False,drift_order=0,P_prior=[1,2000],CMR=[1.0,1.0],units='kms',enfnp=0):
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -343,7 +343,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             primary.add_jitter(MaxLiSolution['extra_sigma'])
         else:
             primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
-        primary.add_drift(0,MaxLiSolution)
+        primary.add_drift(drift_order,MaxLiSolution)
         if binary:
             primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
             if studentT:
@@ -359,7 +359,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                     secondary.add_jitter(MaxLiSolution['extra_sigma_sec'])
                 else:
                     secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
-                secondary.add_drift(0,MaxLiSolution)
+                secondary.add_drift(drift_order,MaxLiSolution)
                 if studentT:
                     secondary.calc_stud_T_outliers(MaxLiSolution['nu'])
                 secondaries.append(secondary)
@@ -399,7 +399,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     for i in range(numpl):
         md.make_object_sheet(system,outputloc,False,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
         datasheet_num += 1
-    md.make_timeseries_sheet(system,outputloc,datasheet_num,instruments, MaxLiSolution, numpl, nKOs, primaries,sec_data_list=secondaries,binary=binary,SB2=SB2,P_prior=P_prior)    
+    md.make_timeseries_sheet(system,outputloc,datasheet_num,instruments, MaxLiSolution, numpl, nKOs, primaries,sec_data_list=secondaries,binary=binary,SB2=SB2,P_prior=P_prior,drift_order=drift_order)    
     datasheet_num +=1 
     fiptip = FIP_TIP(loc, maxNp, P_prior, dataspan)
     md.make_extras_sheet(system,outputloc,datasheet_num,full_posteriors, indices_full, MaxLiSolution,fiptip,times,primaries,secondaries,binary=binary,P_prior=P_prior,SB2=SB2)
