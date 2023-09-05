@@ -445,6 +445,10 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         params.append(['mean RV_err',round(pri.mean_rv_err(),4),merr2,nul,nul,'m/s'])
         params.append(['RMS',round(pri.rms(),4),rms2,nul,nul,'m/s'])
         params.append(['Jitter',round(pri.jitter,4),jit2,nul,nul,'m/s'])
+    drift = ['slope','quadr','cubic']
+    for i in range(drift_order):
+        param = posteriors_single[drift[i]][inds]
+        params.append(['drift_'+str(i+1),np.round(float(MaxLiSolution[drift[i]]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8)])
     for i in range(maxNp):
         params.append(['Bayes Factor '+str(i+1)+'/'+str(i),Bayes_factors[i],Bayes_factors_samps[i],nul,nul])
     if binary:

@@ -288,7 +288,7 @@ def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlimcol='purple',scattercol
     
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
-    numbins=25
+    numbins=50
     xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -350,7 +350,7 @@ def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlimcol='purple',scattercol
     plt.axvline(42.8,c='g',label='stability limit')
     plt.legend()
     
-def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',stabcol='r'):
+def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',stabcol='r',numbins=50):
     
     
     detlim_posts  = pd.read_csv(detlimloc+'posterior_file.csv')
@@ -360,7 +360,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
-    numbins=25
+    numbins=numbins
     xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posteriors = posts
