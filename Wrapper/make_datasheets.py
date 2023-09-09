@@ -358,7 +358,7 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
         ax.axhline(0,c='black',alpha=0.6)
         times += list(data.bjds)
         
-    if drift_order>=0:
+    if drift_order>=1:
         ax = plt.subplot(gs[i+1,0])
         for i,data in enumerate(pri_data_list):
             ax.errorbar(data.bjds,data.residuals()+data.drift(),yerr=data.svrad,fmt='.',c='b',ecolor='darkgrey')
