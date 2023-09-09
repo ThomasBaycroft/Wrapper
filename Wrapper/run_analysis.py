@@ -347,7 +347,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         if binary:
             primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
             if studentT:
-                primary.calc_stud_T_outliers(MaxLiSolution['nu'])
+                primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i],RV_units=units)
                 if i>=1:
@@ -361,17 +361,15 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                     secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 secondary.add_drift(drift_order,MaxLiSolution)
                 if studentT:
-                    secondary.calc_stud_T_outliers(MaxLiSolution['nu'])
+                    primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
                 secondaries.append(secondary)
                 secondary.write_reses(outputloc+'datafiles/', system,prisec='_sec')
                 primary.write_reses(outputloc+'datafiles/', system,prisec='_pri')
             else:
-                if studentT:
-                    primary.calc_stud_T_outliers(MaxLiSolution['nu'])
                 primary.write_reses(outputloc+'datafiles/', system)
         else:
             if studentT:
-                primary.calc_stud_T_outliers(MaxLiSolution['nu'])
+                primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
             primary.write_reses(outputloc+'datafiles/', system)
         primaries.append(primary)
 

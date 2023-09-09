@@ -218,6 +218,7 @@ class RV_planets:
         return self.rv_curve_orbit(self.planet_orbits[number])
     
     def calc_stud_T_outliers(self,nu,sensitivity=10):
+        print('yes1')
         Gd = norm(loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
         Td = t(df=nu, loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
         print(Gd)
@@ -257,7 +258,7 @@ class RV_planets:
         columns.append('svrad')
         file.append(self.svrad)
         if self.studT:
-            print('yes')
+            print('yes2')
             columns.append('T_ratio')
             file.append(self.studT_ratios)
         print(columns)
