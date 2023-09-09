@@ -220,6 +220,8 @@ class RV_planets:
     def calc_stud_T_outliers(self,nu,sensitivity=10):
         Gd = norm(loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
         Td = t(df=nu, loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
+        print(Gd)
+        print(Td)
         self.studT_ratios = Td/Gd
         for j in range(len(Td)):
             if Td[j] == 0. and Gd[j] == 0.:
@@ -255,8 +257,11 @@ class RV_planets:
         columns.append('svrad')
         file.append(self.svrad)
         if self.studT:
+            print('yes')
             columns.append('T_ratio')
             file.append(self.studT_ratios)
+        print(columns)
+        print(file)
 
         df = pd.DataFrame(np.array(file).T,columns=columns)
         df.to_csv(loc+system+self.inst_name+prisec+'_residuals.csv',index=False)
