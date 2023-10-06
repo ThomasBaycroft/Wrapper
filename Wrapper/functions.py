@@ -625,7 +625,7 @@ def wdot_Tid(M0,M1,e1,P1,k0,k1,R0,R1):
     
     return wdot
 
-def wdot_Tid_rad(M1,M2,e,P,k2_1,k2_2,R1,R2):
+def wdot_Tid_ragozzine(M1,M2,e,P,k2_1,k2_2,R1,R2):
     '''
     Caluclate precession from tides (taken from Ragozzine & Wolf 2009) give:
         M0: Mass of primary (M_sun)
@@ -645,10 +645,12 @@ def wdot_Tid_rad(M1,M2,e,P,k2_1,k2_2,R1,R2):
     
     return (wdottid1 + wdottid2)*3600*180/np.pi
 
-def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
+def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,tides=False,k2_0=0,k2_1=0,R0=1,R1=1):
     
 
     wdot -= wdot_GR(M0,M1,e1,P1)
+    if tides:
+        wdot -= wdot_Tid(M0, M1, e1, P1, k2_0, k2_1, R0, R1)
     
     m0 = 0.0000000000000000001
     m1 = 10000
@@ -1047,7 +1049,7 @@ def HW_stab_lim(a,e):
 def HW_stab_lim_ext(a,e,mu):
     return 1.6 +5.1*e - 2.22*e**2 + 4.12*mu - 4.27*e*mu - 5.09*mu**2
 
-def get_HW_stab(M0,M1,P,e,ext=True):
+def get_HW_stab(M0,M1,P,e,ext=True,param='P'):
     
     a = sma_tot(P,M0,M1)
     mu = min(M1/(M0+M1),M0/(M0+M1))
@@ -1057,8 +1059,12 @@ def get_HW_stab(M0,M1,P,e,ext=True):
         a_pl = HW_stab_lim(a, e)*a
     
     P_pl = P_from_sma(a_pl, M0+M1)
+    if param=='P':
+        ret = P_pl
+    else:
+        ret = a_pl
     
-    return P_pl
+    return ret
 
 def K_BBH(m1,m2,m3,pin,pout,I,ecc):
     

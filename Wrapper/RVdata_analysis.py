@@ -122,7 +122,7 @@ class RV_planets:
         for i in range(numpl):
             self.planet_orbits.append(orbit(params[['P'+str(i),'K'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i),'wdot'+str(i)]].values.tolist()[0]))
             
-    def add_known_obj(self,nKOs,params,precession=False):
+    def add_known_obj(self,nKOs,params,precession=False,start_ind=1):
         '''
         Add a planet, given:
             nKOs: int; number of known objects being added total (including the above binary which will not be added again)
@@ -139,7 +139,7 @@ class RV_planets:
             for i in range(nKOs):
                 params['KO_wdot'+str(i)] = 0.
         
-        for i in range(1,nKOs):
+        for i in range(start_ind,nKOs):
             self.KO_orbits.append(orbit(params[['KO_P'+str(i),'KO_K'+str(i),'KO_Tper'+str(i),'KO_ecc'+str(i),'KO_w'+str(i),'KO_wdot'+str(i)]].values.tolist()[0]))
             
     def add_drift(self,order,params):
@@ -218,11 +218,9 @@ class RV_planets:
         return self.rv_curve_orbit(self.planet_orbits[number])
     
     def calc_stud_T_outliers(self,nu,sensitivity=10):
-        print('yes1')
+        
         Gd = norm(loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
         Td = t(df=nu, loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())
-        print(Gd)
-        print(Td)
         self.studT_ratios = Td/Gd
         for j in range(len(Td)):
             if Td[j] == 0. and Gd[j] == 0.:
@@ -258,11 +256,8 @@ class RV_planets:
         columns.append('svrad')
         file.append(self.svrad)
         if self.studT:
-            print('yes2')
             columns.append('T_ratio')
             file.append(self.studT_ratios)
-        print(columns)
-        print(file)
 
         df = pd.DataFrame(np.array(file).T,columns=columns)
         df.to_csv(loc+system+self.inst_name+prisec+'_residuals.csv',index=False)

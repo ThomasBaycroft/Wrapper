@@ -338,6 +338,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         if len(datafiles)>=2 and i+1<len(datafiles):
             primary.add_offset(MaxLiSolution['offset'+str(i+1)])
         primary.add_planet(numpl,MaxLiSolution)
+        primary.add_known_obj(nKOs,MaxLiSolution)
         primary.add_vsys(MaxLiSolution['vsys'])
         if len(datafiles)==1:
             primary.add_jitter(MaxLiSolution['extra_sigma'])
@@ -354,6 +355,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                     secondary.add_offset(MaxLiSolution['offset_sec'+str(i)])
                 secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0),M0=float(MaxLiSolution['M_sec']),M1=float(MaxLiSolution['M_pri']))
                 secondary.add_planet(numpl,MaxLiSolution)
+                secondary.add_known_obj(nKOs,MaxLiSolution)
                 secondary.add_vsys(MaxLiSolution['vsys_sec'])
                 if len(datafiles)==1:
                     secondary.add_jitter(MaxLiSolution['extra_sigma_sec'])
@@ -485,7 +487,10 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             i+=1
         params.append(['','KO_'+str(i+1),'','','',''])
         param = posteriors_single['M_KO_'+str(i)][inds]
-        params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        if float(MaxLiSolution['M_KO_'+str(i)]) > 0.08:
+            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        else:
+            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
         param = posteriors_single['a_KO_'+str(i)][inds]
         params.append(['a',np.round(float(MaxLiSolution['a_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['KO_P'+str(i)][inds]
@@ -504,7 +509,13 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         inds = indices[i]
         params.append(['','Planet_'+str(i+1),'','','',''])
         param = posteriors_single['M_pl_'][inds]
-        params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        if float(MaxLiSolution['M_pl_'+str(i)]) > 0.08:
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        elif float(MaxLiSolution['M_pl_'+str(i)]) > 0.0001:
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
+        else:
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*Ms/Me,np.round(np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Me,'M_earth'])
+
         param = posteriors_single['a_pl_'][inds]
         params.append(['a',np.round(float(MaxLiSolution['a_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['P'][inds]

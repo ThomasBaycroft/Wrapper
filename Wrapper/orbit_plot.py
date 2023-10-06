@@ -9,7 +9,14 @@ Created on Thu Dec 15 11:13:36 2022
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.constants as cst
+from astropy.time import Time
+
 import time
+import pandas as pd
+from . import functions as fcs
+from . import run_analysis as ra 
+from . import posteriors_file_analysis as pfa
+from . import peak_finder as pf
 
 Ms = cst.M_sun.value
 AU = cst.au.value
@@ -50,8 +57,10 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
             ax.plot(theta, rM,c=cs[i],ls=':',alpha=0.4)
             ax.plot(theta, rm,c=cs[i],ls=':',alpha=0.4)
         if len(timeseries)>0:
-            nus = phase(np.array(timeseries),Periods[i],tpers[i])*2*np.pi
-            theta_points = nus +omegas[i] - np.pi/2
+            Ms = phase(np.array(timeseries),Periods[i],tpers[i])*2*np.pi
+            Es = fcs.ecc_anomaly(Ms, eccs[i])
+            nus = fcs.true_anomaly(Es, eccs[i])
+            theta_points = nus + omegas[i] - np.pi/2
             r_points = smas[i]*(1-eccs[i]**2)/(1+eccs[i]*np.cos(nus))
             c = ax.scatter(theta_points,r_points,c=timeseries,cmap='cool',alpha=alpha)
             if i == 0:
@@ -136,6 +145,148 @@ def ecc_anomaly(M, e):
 
     # no convergence, return the best estimate
     return E
+
+def transitability_pred(bin_params,pl_params,start_time,epoch,prec=0.1,ax=''):
+    '''
+    bin_params: M0, M1, P, e, T_per, w, wdot
+    pl_params: M, P, e, T_per, w
+
+    '''
+    
+    Mbin = bin_params[0] + bin_params[1]
+    Pbin = bin_params[2]
+    
+    times = np.arange(start_time,start_time + pl_params[1],prec)
+    
+    sma_pri = semi_major_axis(Mbin,Pbin)*bin_params[1]/Mbin
+    sma_sec = semi_major_axis(Mbin,Pbin)*bin_params[0]/Mbin
+    
+    Ms_bin = phase(np.array(times),bin_params[2],bin_params[4])*2*np.pi
+    Es_bin = fcs.ecc_anomaly(Ms_bin, bin_params[3])
+    nus_bin = fcs.true_anomaly(Es_bin, bin_params[3])
+    thetas = nus_bin + bin_params[5] - np.pi/2
+    r_pri = sma_pri*(1-bin_params[3]**2)/(1+bin_params[3]*np.cos(nus_bin))
+    r_sec = sma_sec*(1-bin_params[3]**2)/(1+bin_params[3]*np.cos(nus_bin))
+    
+    xs_pri = r_pri*np.sin(thetas-np.pi)
+    xs_sec = r_sec*np.sin(thetas)
+    xmax, xmin = max(max(xs_pri),max(xs_sec)), min(min(xs_pri),min(xs_sec))
+
+
+    sma_pl =  semi_major_axis(Mbin+pl_params[0],pl_params[1])*Mbin/(Mbin+pl_params[0])
+
+    Ms_pl = phase(np.array(times),pl_params[1],pl_params[3])*2*np.pi
+    Es_pl = fcs.ecc_anomaly(Ms_pl, pl_params[2])
+    nus_pl = fcs.true_anomaly(Es_pl, pl_params[2])
+    thetas_pl = nus_pl + pl_params[4] - np.pi/2
+    r_pl = sma_pl*(1-pl_params[2]**2)/(1+pl_params[2]*np.cos(nus_pl))
+    
+    xs = r_pl*np.sin(thetas_pl)
+    ys = r_pl*np.cos(thetas_pl)
+    
+    ind = np.logical_and(np.logical_and(xs<=xmax,xs>=xmin),ys>=0)
+    xs_in = xs[np.logical_and(xs<=xmax,xs>=xmin)]
+    rs_in = r_pl[ind]
+    thetas_in = thetas_pl[ind]
+    times_in = times[ind]
+    
+    if ax =='':
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+
+    ax.set_rticks([])
+    ax.grid(False)
+    
+    ax.plot(thetas-np.pi,r_pri)
+    ax.plot(thetas,r_sec)
+    
+    ax.plot(thetas_pl,r_pl,c='grey',alpha=0.1)
+    ax.plot(thetas_in,rs_in,c='g',alpha=0.2)
+    
+    ax.set_rmin(0)
+    
+    return [times_in[0],times_in[-1]]
+
+def transitability_pred_posts(loc,start_time,num=100,cluster=True):
+    
+    posterior_file = pd.read_csv(loc+'posterior_file.csv')
+    # maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = ra.calc_nump_variables(posterior_file,loc)
+    numpl=1
+    maxNp = 3
+    binary=True
+    posts = posterior_file[posterior_file.Np == numpl]
+    
+    if cluster:
+        MaxLiSolution_nocut = posts[posts['logL']==max(posts['logL'])].head(1)
+        
+        #then if ecc not distinct from zero in the posteriors, choose the maximum likelihood with ecc<0.1
+        for i in range(numpl):
+            e_hist = np.histogram(posts['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
+            if np.argmax(e_hist) in [0,1,2]:
+                emax = 0.1
+            else:
+                emax = 1.0
+            posts = posts[posts['ecc'+str(i)]<=emax]
+        
+        MaxLiSolution = posts[posts['logL']==max(posts['logL'])].head(1)
+        
+        columns_of_planetary_interest = ['P','K','phi','ecc','w','wdot','M_pl_','a_pl_','Tper']
+        columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']
+        #for posterior file restricted to numpl
+        posteriors_single = pfa.combine_planets(posts, maxNp, numpl, columns_of_planetary_interest)
+        
+        
+        ##############################################################################
+        #find peaks in combined periodogram 
+        ##############################################################################
+        #currently using simple peak finding, could do with refining maybe more variables
+        variables = ['P','K']
+        variables_2 = ['KO_P','KO_K']
+        indices=None
+        indices_bin=None
+        indices_full=None
+        if binary:
+            for var in variables_2:
+                maxlivar=[]
+                maxlivar.append(MaxLiSolution[var+str(0)])
+                indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices_bin)
+            indices_bin=indices_bin[0]    
+            indices_bin = posteriors_single['KO_P0']!=0
+        # for var in variables_2:
+        #     maxlivar=[]
+        #     for i in range(nKOs):
+        #         maxlivar.append(MaxLiSolution[var+str(i)])
+        #     indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
+        #     indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
+        for var in variables:
+            maxlivar=[]
+            for i in range(numpl):
+                maxlivar.append(MaxLiSolution[var+str(i)])
+            indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
+
+    posts = posteriors_single.loc[indices[0]]
+    
+    posts = posts.reset_index(drop=True)
+    
+    rand = np.random.randint(0,len(posts),num)
+    
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    
+    t0,t1=[],[]
+    
+    for i in rand:
+        bin_params = posts.loc[i][['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']]
+        if cluster:
+            pl_params = posts.loc[i][['M_pl_','P','ecc','Tper','w']]
+        else:
+            pl_params = posts.loc[i][['M_pl_0','P0','ecc0','Tper0','w0']]
+        epoch = posts.loc[i].Epoch
+        tims = transitability_pred(bin_params, pl_params, start_time, epoch,ax=ax)
+        t0.append(tims[0])
+        t1.append(tims[1])
+    
+    print('Transitable window:')
+    print('start (bjd):',np.median(t0),'+',np.percentile(t0,84)-np.median(t0),'-',np.median(t0)-np.percentile(t0,16))
+    print('end (bjd):',np.median(t1),'+',np.percentile(t1,84)-np.median(t1),'-',np.median(t1)-np.percentile(t1,16))
 
 def transit_pred(bin_params,pl_params,start_time,epoch,dataframe=False):
     '''
@@ -246,6 +397,39 @@ def Period_change(P2,e,wdot):
     Assume spread evenly/circular orbit
     '''
     return P2*(1+wdot/(3600*180*365.25*2)*P2)    
+
+def eclipse_range(P,T0,t_range=[],P_err=0,T0_err=0,num=1000):
+    
+    if len(t_range) == 0:
+        t_range = [T0,T0+100]
+    if len(t_range) == 1:
+        t_range.append(t_range[0]+100)
+    
+    Ps = np.random.randn(num)*P_err + P
+    T0s = np.random.randn(num)*T0_err + T0
+    
+    epochs = []
+    epoch = 0
+    t = T0
+    while t <= t_range[1]:
+        t += P
+        epoch += 1
+        if t>=t_range[0] and t <= t_range[1]:
+            epochs.append(epoch)
+
+    Times = np.ndarray([len(epochs),num])
+    for i,epo in enumerate(epochs):
+        Times[i,:] = T0s + epo*Ps
+    
+    print('There are',str(len(epochs)),'eclipses in range, those during nights are:')
+    for i in range(len(epochs)):
+        time = Time(np.median(Times[i,:]),format='jd')
+        plus = (np.percentile(Times[i,:],84)-np.median(Times[i,:]))*24*60
+        minus = (np.median(Times[i,:])-np.percentile(Times[i,:],16))*24*60
+        if time.ymdhms.hour >20 or time.ymdhms.hour<7:
+            print('bjd = ',np.median(Times[i,:]),'+',np.percentile(Times[i,:],84)-np.median(Times[i,:]),'-',np.median(Times[i,:])-np.percentile(Times[i,:],16))    
+            print('UT time of median is',time.iso,'+',plus,'-',minus,'mins')
+
 # bin_params = [1.2388,1.20295,19.657878,0.448178,10,1.231,0.]
 # pl_params = [2.31*Mj/Ms,143.09,0.14,2,4]
 # times = np.linspace(0,500,500)
