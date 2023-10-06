@@ -316,7 +316,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     if nKOs >=1:
         for var in variables_2:
             maxlivar=[]
-            for i in range(nKOs):
+            for i in range(nKOs+1):
                 maxlivar.append(MaxLiSolution[var+str(i)])
             indices_KO = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, nKOs+1, pre_index=indices_KO)
 
