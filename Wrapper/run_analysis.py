@@ -291,6 +291,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     variables_2 = ['KO_P','KO_K']
     indices=None
     indices_bin=None
+    indices_KO = None
     indices_full=None
     if binary:
         for var in variables_2:
@@ -298,7 +299,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             maxlivar.append(MaxLiSolution[var+str(0)])
             indices_bin = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, 1, pre_index=indices_bin)
         indices_bin=indices_bin[0]    
-        indices_bin = posteriors_single['KO_P0']!=0
+        # indices_bin = posteriors_single['KO_P0']!=0
     # for var in variables_2:
     #     maxlivar=[]
     #     for i in range(nKOs):
@@ -311,6 +312,13 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             maxlivar.append(MaxLiSolution[var+str(i)])
         indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
         indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
+        
+    if nKOs >=1:
+        for var in variables_2:
+            maxlivar=[]
+            maxlivar.append(MaxLiSolution[var+str(0)])
+            indices_KO = pf.simple_peaks(posteriors_single, var+str(0), maxlivar, nKOs+1, pre_index=indices_KO)
+
 
     
     ##############################################################################
@@ -321,7 +329,6 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     primaries = []
     secondaries = []
     numdats = []
-    print('nKOs =',nKOs)
     for i, datafile in enumerate(datafiles):
 
         # rvdata = pd.read_csv(datafile,sep='\t',engine='python',skiprows=[1],header=0)
@@ -340,7 +347,6 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             primary.add_offset(MaxLiSolution['offset'+str(i+1)])
         primary.add_planet(numpl,MaxLiSolution)
         primary.add_known_obj(nKOs,MaxLiSolution)
-        print('num_KO orbs =',len(primary.KO_orbits))
         primary.add_vsys(MaxLiSolution['vsys'])
         if len(datafiles)==1:
             primary.add_jitter(MaxLiSolution['extra_sigma'])
@@ -396,7 +402,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     md.make_binary_sheet(system,outputloc,posteriors_single, len_posts, indices, indices_bin, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
     datasheet_num += 1
     for i in range(nKOs):
-        md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
+        md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices_KO[i+1], full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
         datasheet_num += 1
     for i in range(numpl):
         md.make_object_sheet(system,outputloc,False,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
