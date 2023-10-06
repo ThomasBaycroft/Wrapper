@@ -313,9 +313,10 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
             parameter_cols.append('KO_wdot'+s)
             parameter_names.append(r'$\dot{\omega}$ = ')
             parameter_units.append(' arcsec/yr')
-        ind=indices[0]
-        for i in range(1,len(indices)):
-            ind = np.logical_or(ind,indices(i))
+        ind = indices[object_number]
+        # ind=indices[0]
+        # for i in range(1,len(indices)):
+        #     ind = np.logical_or(ind,indices(i))
     else:
         cols = ['P','K','ecc','w','phi','vsys']
         names = [r'$P$',r'$K$',r'$e$',r'$\omega$',r'$\phi_0$',r'$V_{sys}$']
