@@ -306,7 +306,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     if Known_object:
         s = str(object_number+1)
-        cols = ['KO_P'+s,'KO_K'+s,'KO_ecc'+s,'KO_w'+s,'KO_phi'+s,'KO_vsys']
+        cols = ['KO_P'+s,'KO_K'+s,'KO_ecc'+s,'KO_w'+s,'KO_phi'+s,'vsys']
         names = [r'$P$',r'$K$',r'$e$',r'$\omega$',r'$\phi_0$',r'$V_{sys}$']
         units = [' days',' m/s','',' rad',' rad',' m/s']
         if precession:
