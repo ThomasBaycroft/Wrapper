@@ -139,7 +139,7 @@ class RV_planets:
             for i in range(nKOs):
                 params['KO_wdot'+str(i)] = 0.
         
-        for i in range(start_ind,nKOs):
+        for i in range(start_ind,nKOs+start_ind):
             self.KO_orbits.append(orbit(params[['KO_P'+str(i),'KO_K'+str(i),'KO_Tper'+str(i),'KO_ecc'+str(i),'KO_w'+str(i),'KO_wdot'+str(i)]].values.tolist()[0]))
             
     def add_drift(self,order,params):
