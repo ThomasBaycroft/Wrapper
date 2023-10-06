@@ -321,6 +321,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     primaries = []
     secondaries = []
     numdats = []
+    print('nKOs =',nKOs)
     for i, datafile in enumerate(datafiles):
 
         # rvdata = pd.read_csv(datafile,sep='\t',engine='python',skiprows=[1],header=0)
@@ -339,6 +340,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             primary.add_offset(MaxLiSolution['offset'+str(i+1)])
         primary.add_planet(numpl,MaxLiSolution)
         primary.add_known_obj(nKOs,MaxLiSolution)
+        print('num_KO orbs =',len(primary.KO_orbits))
         primary.add_vsys(MaxLiSolution['vsys'])
         if len(datafiles)==1:
             primary.add_jitter(MaxLiSolution['extra_sigma'])
