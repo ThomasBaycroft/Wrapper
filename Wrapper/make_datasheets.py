@@ -313,7 +313,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
             parameter_cols.append('KO_wdot'+s)
             parameter_names.append(r'$\dot{\omega}$ = ')
             parameter_units.append(' arcsec/yr')
-        ind = indices[object_number]
+        ind = indices[object_number+1]
         # ind=indices[0]
         # for i in range(1,len(indices)):
         #     ind = np.logical_or(ind,indices(i))

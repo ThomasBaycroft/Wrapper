@@ -403,7 +403,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     md.make_binary_sheet(system,outputloc,posteriors_single, len_posts, indices, indices_bin, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=precession)
     datasheet_num += 1
     for i in range(nKOs):
-        md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices_KO[i+1], full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
+        md.make_object_sheet(system,outputloc,True,i,datasheet_num,posteriors_single, indices_KO, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
         datasheet_num += 1
     for i in range(numpl):
         md.make_object_sheet(system,outputloc,False,i,datasheet_num,posteriors_single, indices, full_posteriors, numpl,[Bayes_factors,Nps,Bayes_factors_samps],MaxLiSolution,primaries,secondaries,SB2=SB2,binary=binary,precession=False)
