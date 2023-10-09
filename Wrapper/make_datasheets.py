@@ -104,7 +104,8 @@ def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bi
     ax6.set(xlabel='Period[days]', ylabel='Frequency')
     ax6.semilogx()
     ax6.grid(True)
-    ax6.axvline(fcs.get_HW_stab(float(MaxLiSolution.M_pri), float(MaxLiSolution.M_sec), float(MaxLiSolution.KO_P0), float(MaxLiSolution.KO_ecc0)),c='orange',ls='--',label='HW stability limit')
+    if binary:
+        ax6.axvline(fcs.get_HW_stab(float(MaxLiSolution.M_pri), float(MaxLiSolution.M_sec), float(MaxLiSolution.KO_P0), float(MaxLiSolution.KO_ecc0)),c='orange',ls='--',label='HW stability limit')
     ax6.axvline(365,c='r', label='1 year')
     ax6.axvline(dataspan,c='g', label='dataspan')
     toplim = ax6.axes.get_ylim()[1]
