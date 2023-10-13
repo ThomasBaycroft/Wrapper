@@ -35,12 +35,6 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
         #calculate the mass of the primary and secondary star if a binary
         posterior_file['M_pri'],posterior_file['M_sec'] = fcs.masses(SB2,posterior_file['KO_K0'],posterior_file['KO_P0'],posterior_file['KO_ecc0'],q=q,M1=star_mass)
         posterior_file['R_pri'] = posterior_file['M_pri']*0+star_radius
-        #if precessing calculate the anomalistic period, and then the semi-major axis
-        if Precession:
-            posterior_file['KO_Pano0'] = fcs.Period_change(posterior_file['KO_P0'], posterior_file['KO_ecc0'], posterior_file['KO_wdot0'])
-            posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_Pano0'],posterior_file['M_pri'],posterior_file['M_sec'])
-        else:
-            posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_P0'],posterior_file['M_pri'],posterior_file['M_sec'])
         
         #calculate the GR precession values and initalise the dynamical wdot column 
         posterior_file['wdot_GR'] = fcs.wdot_GR(posterior_file['M_pri'],posterior_file['M_sec'],posterior_file['KO_ecc0'], posterior_file['KO_P0'])
@@ -48,7 +42,17 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
         #centre angles calculate the time of periastron for the binary
         posterior_file['KO_w0'] = centre_angles(posterior_file['KO_w0'])
         posterior_file['KO_phi0'] = centre_angles(posterior_file['KO_phi0'])
-        posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_P0']*posterior_file['KO_phi0']/2/np.pi
+        
+        #if precessing calculate the anomalistic period, and then the semi-major axis and time of periastron passage
+        if Precession:
+            posterior_file['KO_Pano0'] = fcs.Period_change(posterior_file['KO_P0'], posterior_file['KO_ecc0'], posterior_file['KO_wdot0'])
+            posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_Pano0'],posterior_file['M_pri'],posterior_file['M_sec'])
+            posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_Pano0']*posterior_file['KO_phi0']/2/np.pi
+        else:
+            posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_P0'],posterior_file['M_pri'],posterior_file['M_sec'])
+            posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_P0']*posterior_file['KO_phi0']/2/np.pi
+        
+            
         posterior_file['HW_stab_a'] = fcs.HW_stab_lim_ext(posterior_file['a_pri']+posterior_file['a_sec'], posterior_file['KO_ecc0'], posterior_file['M_sec']/(posterior_file['M_pri']+posterior_file['M_sec']))*(posterior_file['a_pri']+posterior_file['a_sec'])
         if nKOs >1:
             for i in range(1,nKOs):

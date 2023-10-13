@@ -90,15 +90,18 @@ class RV_planets:
         if units == 'kms':
             scaling=1000
         self.vsys = float(vsys*scaling)
+        self.num_params+=1
         
     def add_offset(self,offset,units='ms'):
         scaling=1.0
         if units == 'kms':
             scaling=1000
         self.vrad -= float(offset)*scaling
+        self.num_params+=1
         
     def add_jitter(self,jitter):
         self.jitter = float(jitter)
+        self.num_params+=1
         
         
     def add_planet(self,numpl,params,precession=False):
@@ -113,6 +116,8 @@ class RV_planets:
         
         self.numpl = numpl
         self.num_bodies += numpl
+        
+        self.num_params+= (5+precession)*numpl
         
         
         if precession==False:
@@ -135,6 +140,8 @@ class RV_planets:
         self.nKOs = nKOs
         self.num_bodies += nKOs-1
         
+        self.num_params+= (5+precession)*self.numpl
+        
         if precession==False:
             for i in range(nKOs):
                 params['KO_wdot'+str(i)] = 0.
@@ -153,6 +160,7 @@ class RV_planets:
             self.drift_params.append(0)
         
         self.remove_drifts()
+        self.num_params+= order
         
     def remove_orbit_from_data(self,data_times,data_values,orbit):
                 
@@ -228,11 +236,21 @@ class RV_planets:
         self.inliers = self.studT_ratios <= sensitivity
         self.outliers = self.studT_ratios > sensitivity
         self.studT=True
+        self.nu = nu
         
     
     def rms(self):
         resids = np.array(self.residuals())
         return (sum(resids**2)/len(resids))**(1/2)
+    
+    def logL(self):
+        var = np.array(self.svrad)**2 + self.jitter**2
+        if self.studT:
+            logL = np.sum(np.log(t(df=self.nu, loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())))
+        else:
+            # logL = np.sum(- 0.5*np.log(2*np.pi) - 0.5*np.log(var) - 0.5*np.array(self.residuals())**2/var)
+            logL = np.sum(np.log(norm(loc=0, scale=np.hypot(self.svrad, self.jitter)).pdf(self.residuals())))
+        return logL
       
     def mean_rv_err(self):
         return sum(self.svrad)/len(self.svrad)
@@ -240,7 +258,7 @@ class RV_planets:
     def chi_2_nu(self):
         #*****#
         nobs = len(self.bjds)
-        fit_params = 0
+        fit_params = self.num_params
         nu = nobs-fit_params
         
         return (np.array(self.residuals)**2)/(np.array(self.svrad)**2),nu
@@ -269,6 +287,7 @@ class orbit:
     
     def __init__(self,params,GR=False,Tides=False,M0=1.,R0=1.,M1=1.):
         
+
         self.P = params[0]
         self.K = params[1]
         self.ecc = params[3]
