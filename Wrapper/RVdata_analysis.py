@@ -72,7 +72,7 @@ class RV_planets:
         self.binary = True
         self.num_bodies += 1
         self.num_params += 5 + precession
-        parameters = params
+        parameters = params[:]
         if type(params) == pd.core.frame.DataFrame:
             parameters = params.values.tolist()[0]
         
@@ -96,6 +96,7 @@ class RV_planets:
         scaling=1.0
         if units == 'kms':
             scaling=1000
+        print(self.inst_name,float(offset),float(offset)*scaling,self.vrad[0])
         self.vrad -= float(offset)*scaling
         self.num_params+=1
         
@@ -280,7 +281,7 @@ class RV_planets:
         df = pd.DataFrame(np.array(file).T,columns=columns)
         df.to_csv(loc+system+self.inst_name+prisec+'_residuals.csv',index=False)
         
-        
+    
         
     
 class orbit:
@@ -323,3 +324,60 @@ class orbit:
     def phase(self,times):
         
         return fcs.phase(times, self.P, self.Tper)
+    
+    def true_anoms(self,times):
+        
+        phase = self.phase(times)
+        M = phase*2*np.pi
+        E = fcs.ecc_anomaly(M, self.ecc)
+        nu = fcs.true_anomaly(E, self.ecc)
+        
+        
+        return nu
+    
+    def true_anom_hist(self,times,bins=10,nu_tod=0):
+        
+        nu=self.true_anoms(times)
+
+        less = np.array(nu<nu_tod)
+        
+        nu += less*2*np.pi
+        
+        hist = np.histogram(nu,bins)
+        
+        return hist
+    
+    def Tbins_in_trueanom(self,today,nbins,times):
+        
+        nu_tod = self.true_anoms(today)
+        
+        nubins = np.linspace(nu_tod,nu_tod+2*np.pi,nbins+1)
+        
+        nubins = nubins.T[0]
+        
+        Ebins = 2*np.arctan(np.sqrt((1-self.ecc)/(1+self.ecc))*np.tan(nubins/2))
+        
+        Mbins = Ebins - self.ecc*np.sin(Ebins)
+        
+        Tbins = Mbins*self.P/2/np.pi + self.Tper
+                
+        Tbins += today - Tbins[0]
+        
+        less = np.array(Tbins<=Tbins[0])
+        
+        less[0] = 0
+        
+        Tbins += less*self.P
+        
+        # nubins += less*2*np.pi
+
+        hist = self.true_anom_hist(times,nubins,nu_tod=nu_tod)
+
+        return hist,Tbins
+        
+        
+        
+        
+        
+        
+    

@@ -27,6 +27,19 @@ def semi_major_axis(M_tot,P):
     return ((P*24*3600)**2*G*(M_tot)*Ms/(4*np.pi**2))**(1/3)/AU
 
 def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-',bords=False):
+    '''
+    Plot orbits on a polar plot, showing where each RV datapoint has been sampled coloured by time, takes:
+        Masses: list, Mass of each body (Msun)
+        Periods: list, orbital periods (days)
+        eccs:  list, eccentricities
+        omegas: list, arguments of pericentre
+        ax: an axis on which to plot (if not provided creates one)
+        fig: a figure on which to plot (if not provided creates one)
+        circumbinary: bool, circumbinary flag
+        SB2: bool, SB2 flag
+        timeseries: list, RV times
+        tpers: list, times of periastron (defaults to all being zero and assuming length three)
+    '''
     M_tot = np.sum(Masses)
     smas = semi_major_axis(M_tot,Periods)
     numbod = len(Masses)
@@ -398,7 +411,7 @@ def Period_change(P2,e,wdot):
     '''
     return P2*(1+wdot/(3600*180*365.25*2)*P2)    
 
-def eclipse_range(P,T0,t_range=[],P_err=0,T0_err=0,num=1000):
+def eclipse_range(P,T0,t_range=[],P_err=0,T0_err=0,num=1000, night=True):
     
     if len(t_range) == 0:
         t_range = [T0,T0+100]
@@ -426,9 +439,16 @@ def eclipse_range(P,T0,t_range=[],P_err=0,T0_err=0,num=1000):
         time = Time(np.median(Times[i,:]),format='jd')
         plus = (np.percentile(Times[i,:],84)-np.median(Times[i,:]))*24*60
         minus = (np.median(Times[i,:])-np.percentile(Times[i,:],16))*24*60
-        if time.ymdhms.hour >20 or time.ymdhms.hour<7:
+        if time.ymdhms.hour >20 or time.ymdhms.hour<7 or night==False:
             print('bjd = ',np.median(Times[i,:]),'+',np.percentile(Times[i,:],84)-np.median(Times[i,:]),'-',np.median(Times[i,:])-np.percentile(Times[i,:],16))    
             print('UT time of median is',time.iso,'+',plus,'-',minus,'mins')
+
+def obs_time_density(ax,orb,nbins,today,data_times):
+    
+    nuhist,Tbins = orb.Tbins_in_trueanom(today,nbins,data_times)
+    
+    ax.stairs(nuhist[0], Tbins, fill=True)
+
 
 # bin_params = [1.2388,1.20295,19.657878,0.448178,10,1.231,0.]
 # pl_params = [2.31*Mj/Ms,143.09,0.14,2,4]

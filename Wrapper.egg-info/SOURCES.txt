@@ -1,6 +1,9 @@
 pyproject.toml
+Wrapper/ETdata_analysis.py
+Wrapper/GAIAdata_analysis.py
 Wrapper/RVdata_analysis.py
 Wrapper/__init__.py
+Wrapper/compare_models.py
 Wrapper/functions.py
 Wrapper/make_datasheets.py
 Wrapper/make_plots.py
@@ -8,8 +11,8 @@ Wrapper/orbit_plot.py
 Wrapper/peak_finder.py
 Wrapper/posteriors_file_analysis.py
 Wrapper/run_analysis.py
-Wrapper/test.py
 Wrapper.egg-info/PKG-INFO
 Wrapper.egg-info/SOURCES.txt
 Wrapper.egg-info/dependency_links.txt
+Wrapper.egg-info/requires.txt
 Wrapper.egg-info/top_level.txt

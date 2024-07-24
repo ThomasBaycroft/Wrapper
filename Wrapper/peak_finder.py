@@ -6,7 +6,7 @@ Created on Fri Jan  6 20:26:53 2023
 @author: thomasbaycroft
 """
 import numpy as np
-
+# import hdbscan
 
 
 def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
@@ -63,3 +63,21 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
             indices.append(np.logical_and(ind,pre_index[i]))
     
     return indices
+
+def HDBScan(posteriors,Vars,maxlisamp,numpl):
+    '''
+    Takes inputs:
+        posteriors: dataframe of the posteriors in which we are looking for peaks
+        Vars: list of str; the variables we are clustering in
+        maxlisamp: dataframe row; maximum likelihood solution
+        numpl: number of planets
+
+    This function performs clustering using HDBScan in the parameter space given and then associates clusters found with 
+    the maximum likelohood solutions to obtain clusters associated with the detected planets and returns:
+        indices: list of lists, for each planet there is a list of booleans indicating if each 
+        posterior 
+    '''
+    pass
+    
+    
+    

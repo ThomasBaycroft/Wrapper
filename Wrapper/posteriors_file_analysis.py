@@ -10,7 +10,7 @@ from . import functions as fcs
 import numpy as np
 
 
-def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0,star_radius=1.0):
+def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_mass=1.0,star_mass_err=0.0,star_radius=1.0,Yaz_M2=False,M2=0.3,M2_err=0.01,M2_posts=[],phiw=False):
     '''
     takes a dataframe for the posteriors and adds columns for various derived quantities etc
     requires various flags/values:
@@ -24,21 +24,31 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
     saves the resulting file as a csv and also returns it as a dataframe
     '''
     #add columns with other parameters, masses, au, P_anom, wdot_theory, T0 (...)
+    if phiw == True:
+        for i in range(nKOs):
+            posterior_file['KO_phi'+str(i)] -= posterior_file['KO_w'+str(i)]
+        for i in range(maxNp):
+            posterior_file['phi'+str(i)] -= posterior_file['w'+str(i)]
     posterior_file['Epoch'] = epoch
     l = len(posterior_file['Epoch'])
     star_mass = np.random.randn(l)*star_mass_err + star_mass    
+    if Yaz_M2:
+        if M2_posts==[]:
+            secondary_mass = np.random.randn(l)*M2_err + M2
+        else:
+            if len(M2_posts) == l:
+                secondary_mass = np.array(M2_posts)
+            else:
+                # print('dimension of M2_posts does not match that of the posteriors',l,len(M2_posts))
+                return 'Error! dimension of M2_posts does not match that of the posteriors',l,len(M2_posts)
+              
     if binary:
         if SB2:
             q = posterior_file['KO_q0']
         else:
             q = 1.0
-        #calculate the mass of the primary and secondary star if a binary
-        posterior_file['M_pri'],posterior_file['M_sec'] = fcs.masses(SB2,posterior_file['KO_K0'],posterior_file['KO_P0'],posterior_file['KO_ecc0'],q=q,M1=star_mass)
-        posterior_file['R_pri'] = posterior_file['M_pri']*0+star_radius
+
         
-        #calculate the GR precession values and initalise the dynamical wdot column 
-        posterior_file['wdot_GR'] = fcs.wdot_GR(posterior_file['M_pri'],posterior_file['M_sec'],posterior_file['KO_ecc0'], posterior_file['KO_P0'])
-        posterior_file['wdot_dyn'] = 0.
         #centre angles calculate the time of periastron for the binary
         posterior_file['KO_w0'] = centre_angles(posterior_file['KO_w0'])
         posterior_file['KO_phi0'] = centre_angles(posterior_file['KO_phi0'])
@@ -46,12 +56,28 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
         #if precessing calculate the anomalistic period, and then the semi-major axis and time of periastron passage
         if Precession:
             posterior_file['KO_Pano0'] = fcs.Period_change(posterior_file['KO_P0'], posterior_file['KO_ecc0'], posterior_file['KO_wdot0'])
+            if Yaz_M2:
+                posterior_file['M_sec'] = secondary_mass
+                posterior_file['M_pri'] = fcs.get_M1_Yaz_M2(posterior_file['M_sec'], posterior_file['KO_Pano0'], posterior_file['KO_K0'], posterior_file['KO_ecc0'])
+            else:
+                posterior_file['M_pri'],posterior_file['M_sec'] = fcs.masses(SB2,posterior_file['KO_K0'],posterior_file['KO_Pano0'],posterior_file['KO_ecc0'],q=q,M1=star_mass)
             posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_Pano0'],posterior_file['M_pri'],posterior_file['M_sec'])
             posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_Pano0']*posterior_file['KO_phi0']/2/np.pi
         else:
+            if Yaz_M2:
+                posterior_file['M_sec'] = secondary_mass
+                posterior_file['M_pri'] = fcs.get_M1_Yaz_M2(posterior_file['M_sec'], posterior_file['KO_P0'], posterior_file['KO_K0'], posterior_file['KO_ecc0'])
+            else: 
+                posterior_file['M_pri'],posterior_file['M_sec'] = fcs.masses(SB2,posterior_file['KO_K0'],posterior_file['KO_P0'],posterior_file['KO_ecc0'],q=q,M1=star_mass)
             posterior_file['a_pri'],posterior_file['a_sec'] = fcs.sma_2body(posterior_file['KO_P0'],posterior_file['M_pri'],posterior_file['M_sec'])
             posterior_file['Tper_bin'] = posterior_file['Epoch'] - posterior_file['KO_P0']*posterior_file['KO_phi0']/2/np.pi
-        
+            
+        posterior_file['R_pri'] = posterior_file['M_pri']*0+star_radius 
+            
+        #calculate the GR precession values and initalise the dynamical wdot column 
+        posterior_file['wdot_GR'] = fcs.wdot_GR(posterior_file['M_pri'],posterior_file['M_sec'],posterior_file['KO_ecc0'], posterior_file['KO_P0'])
+        posterior_file['wdot_dyn'] = 0.
+        print(posterior_file['wdot_GR'])
             
         posterior_file['HW_stab_a'] = fcs.HW_stab_lim_ext(posterior_file['a_pri']+posterior_file['a_sec'], posterior_file['KO_ecc0'], posterior_file['M_sec']/(posterior_file['M_pri']+posterior_file['M_sec']))*(posterior_file['a_pri']+posterior_file['a_sec'])
         if nKOs >1:

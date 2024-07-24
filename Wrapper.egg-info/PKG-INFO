@@ -1,3 +1,10 @@
 Metadata-Version: 2.1
 Name: Wrapper
-Version: 0.0.1
+Version: 0.0.2
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: matplotlib
+Requires-Dist: corner
+Requires-Dist: astropy
+Requires-Dist: rebound
+Requires-Dist: PyAstronomy

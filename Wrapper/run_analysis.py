@@ -33,7 +33,7 @@ from . import make_datasheets as md
 
 time0 = time.time()
 
-def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0):
+def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,Yaz_M2=False,M2=0.3,M2_err=0.01,M2_posts=[],phiw=False):
     #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
     with open(loc+'posterior_sample.txt') as f:
         names = f.readline().split()[1:]
@@ -72,7 +72,7 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0)
     try:
         posterior_file = pd.read_csv(loc+'posterior_file.csv')
     except FileNotFoundError:
-        posterior_file= pfa.add_columns_RV(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err)
+        posterior_file= pfa.add_columns_RV(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err,Yaz_M2=Yaz_M2,M2=M2,M2_err=M2_err,M2_posts=M2_posts,phiw=phiw)
         # a,b=[],[]
         # for i in range(len(posterior_file)):
         #     x,y = op.transit_pred(posterior_file[['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']].values[i], posterior_file[['M_pl_0','P0','ecc0','Tper0','w0']].values[i], 2458800,epoch)
@@ -91,7 +91,8 @@ def read_posterior_file(loc,res_numpl=False,nump=0.1,combine=False,columns=['P',
         if combine:
             columns_of_planetary_interest = columns
             posterior_file = pfa.combine_planets(posterior_file, maxNp, numpl, columns_of_planetary_interest)
-        
+     
+        posterior_file = posterior_file.reset_index(drop=True)    
     return posterior_file
 
 def Samples_BFs(loc,maxNp):
@@ -350,7 +351,13 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         primary.add_known_obj(nKOs,MaxLiSolution)
         primary.add_vsys(MaxLiSolution['vsys'])
         if len(datafiles)==1:
-            primary.add_jitter(MaxLiSolution['extra_sigma'])
+            try:
+                primary.add_jitter(MaxLiSolution['extra_sigma'])
+            except KeyError:
+                try:
+                    primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
+                except KeyError:
+                    primary.add_jitter(MaxLiSolution['jitter'])
         else:
             primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
         primary.add_drift(drift_order,MaxLiSolution)
@@ -360,14 +367,17 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i],RV_units=units)
-                if i>=1:
-                    secondary.add_offset(MaxLiSolution['offset_sec'+str(i)])
+                if len(datafiles)>=2 and i+1<len(datafiles):
+                    secondary.add_offset(MaxLiSolution['offset_sec'+str(i+1)])
                 secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0),M0=float(MaxLiSolution['M_sec']),M1=float(MaxLiSolution['M_pri']))
                 secondary.add_planet(numpl,MaxLiSolution)
                 secondary.add_known_obj(nKOs,MaxLiSolution)
                 secondary.add_vsys(MaxLiSolution['vsys_sec'])
                 if len(datafiles)==1:
-                    secondary.add_jitter(MaxLiSolution['extra_sigma_sec'])
+                    try:
+                        secondary.add_jitter(MaxLiSolution['extra_sigma_sec'])
+                    except KeyError:
+                        secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 else:
                     secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 secondary.add_drift(drift_order,MaxLiSolution)
