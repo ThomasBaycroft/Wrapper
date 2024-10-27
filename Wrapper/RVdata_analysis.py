@@ -286,7 +286,7 @@ class RV_planets:
     
 class orbit:
     
-    def __init__(self,params,GR=False,Tides=False,M0=1.,R0=1.,M1=1.):
+    def __init__(self,params,GR=False,Tides=False,M0=1.,R0=1.,M1=0):
         
 
         self.P = params[0]
@@ -301,6 +301,9 @@ class orbit:
         self.M0 = M0
         self.M1 = M1
         self.R0 = R0
+
+    def mass(self):
+        return fcs.get_mass(self.K,self.M0+self.M1,self.P,self.ecc)
 
 
     def RV_keplerian_sub(self,times):

@@ -394,7 +394,7 @@ def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlims=True,detlimcol='purpl
 
 
     
-def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',stabcol='r',numbins=50):
+def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',stabcol='r',numbins=50,plot_detlim=True,Puplim=1000,Plowlim=10):
     
     
     detlim_posts  = pd.read_csv(detlimloc+'posterior_file.csv')
@@ -403,15 +403,18 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     detlim_posteriors = detlim_posts[detlim_posts['Np']==numpl]
     
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
-    detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
+    detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, max(numpl,1), columns_of_planetary_interest)
     numbins=numbins
     xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posteriors = posts[posts.KO_wdot0>=0]
+
+    if plot_detlim==False:
+        outcol=scattercol
     
     # number = len(posteriors)
     
-    P = np.random.rand(number)*400 + 20
+    P = np.random.rand(number)*(Puplim-Plowlim) + Plowlim
     inds = random.sample(list(posteriors.index),number)
     # print(inds)
     # print(posteriors)
@@ -420,7 +423,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     # print(np.percentile(posteriors.KO_wdot0[inds],90))
     done = 0
     for j,i in enumerate(inds):
-        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,27.28638971)#posteriors['KO_wdot0'][i])
+        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
         # print(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i])
         # print(posteriors['KO_wdot0'][i],P[j],M*Ms/Mj)
         # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
@@ -449,8 +452,9 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
         except ValueError:
             fails.append(P[j])
     print(len(fails),'errors recorded')
-        
-    plt.plot(xax,detlim*Msun/Mj,c=detlimcol,label='Detection limit')    
+    
+    if plot_detlim:
+        plt.plot(xax,detlim*Msun/Mj,c=detlimcol,label='Detection limit')    
     # bincen, perc = get_percentile(np.array(P_under),np.array(M_under),bins=np.linspace(min(P_under),max(P_under),20),percentile=99,log=False)
     # plt.plot(bincen,perc)
     # sns.kdeplot(P_under,M_under,levels=[0.64,0.95],log_scale=(False,False),color='indianred')
@@ -472,8 +476,12 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     # plt.plot(xax,ms,c='g',label='400 m/s')
     # plt.axhline(80,ls='--',c='grey')
     # plt.axhline(13,ls='--',c='grey')
-    plt.axvline(np.median(P_stabs),c=stabcol,label='stability limit',ls='--')
-    plt.fill_betweenx([0.1,1000],[np.median(P_stabs)],fc='orange',alpha=0.4,label='unstable region')
+    if len(P_stabs)==0:
+        for i in range(1000):
+            P_stab=fcs.get_HW_stab(posts['M_pri'][i],posts['M_sec'][i],posts['KO_P0'][i],posts['KO_ecc0'][i],ext=True)
+            P_stabs.append(P_stab)
+    plt.axvline(np.median(P_stabs),c=stabcol,ls='--') #label='stability limit'
+    plt.fill_betweenx([0.001,1000],[np.median(P_stabs)],fc='orange',alpha=0.4,label='unstable region')
     plt.legend()    
     
     

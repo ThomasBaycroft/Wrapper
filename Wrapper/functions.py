@@ -12,13 +12,16 @@ from astropy import constants
 from PyAstronomy.pyTiming import pyPeriod
 
 pi = np.pi
-Ms = constants.M_sun.value
 c = constants.c.value
 G = constants.G.value
-Rs = constants.R_sun.value
-Mj = constants.M_jup.value
 AU = constants.au.value
+Rsun = constants.R_sun.value
+Msun = constants.M_sun.value
+Mj = constants.M_jup.value
 Me = constants.M_earth.value
+Re = constants.R_earth.value
+Mnep = 1.0241*10**(26)
+Msat = 5.68319*10**(26)
 
 #################################################
 #Radial Velocity functions
@@ -98,6 +101,15 @@ def ecc_anomaly(M, e):
 
     # no convergence, return the best estimate
     return E
+
+def mean_anom(f,e):
+    '''
+    calculate mean anomaly from the true anomaly
+    '''
+    E = 2. * np.arctan( np.sqrt((1.-e)/(1.+e)) * np.tan(f/2.))
+
+    M = E - e*np.sin(E)
+    return M
 
 def ellip_rectang(t,P,e,Tper):
     
@@ -250,7 +262,7 @@ def v_tide(R_star, M_star, P, f, w, M_p, M_p_unit):
     
     phi_0 = np.pi/2 - w #phi_0 defined relative to argument of pericenter
     
-    M_ratio = Ms/Mj
+    M_ratio = Msun/Mj
     if M_p_unit == "M_s":
         M_p *= M_ratio
         
@@ -272,7 +284,7 @@ def masses(SB2,K,P,e,M1=1,q=1):
     '''    
     if SB2:
         mass_func = (P*24*3600)*(K/q)**3*(1-e**2)**(3/2)/2/np.pi/G
-        M1 = (mass_func*(1+q)**2)/Ms
+        M1 = (mass_func*(1+q)**2)/Msun
         M2 = M1*q
     else:
         M2 = get_mass(K,M1,P,e)
@@ -286,9 +298,9 @@ def semi_amplitude(M0,M1,P,e):
     Parameters
     ----------
     M0 : float
-        Body 0 mass (Ms)
+        Body 0 mass (Msun)
     M1 : float
-        Body 1 mass (Ms)
+        Body 1 mass (Msun)
     P : float
         Orbital Period (days)
     e : float
@@ -309,9 +321,9 @@ def semi_amplitude_2(M0,M1,P,e,sini=1):
     Parameters
     ----------
     M0 : float
-        Body 0 mass (Ms)
+        Body 0 mass (Msun)
     M1 : float
-        Body 1 mass (Ms)
+        Body 1 mass (Msun)
     P : float
         Orbital Period (days)
     e : float
@@ -324,7 +336,7 @@ def semi_amplitude_2(M0,M1,P,e,sini=1):
 
     '''
     
-    return (2*np.pi*G/(P*24*3600))**(1/3)*M1*Ms*sini*((M0+M1)*Ms)**(-2/3)*(1-e**2)**(-0.5)
+    return (2*np.pi*G/(P*24*3600))**(1/3)*M1*Msun*sini*((M0+M1)*Msun)**(-2/3)*(1-e**2)**(-0.5)
 
 def get_mass(K,M0,P,e):
     '''
@@ -371,9 +383,9 @@ def get_M1_Yaz_M2(M2,P,K1,e,i=np.pi/2):
         i: inclination to the line of sight (assumed to be 90 if not specified) (rad)
     Returns mass of primary star (M_sun)
     '''
-    m2 = M2*Ms
+    m2 = M2*Msun
     C = (1-e**2)**(3/2)/(np.sin(i)**3)*(P*24*3600)*(K1**3)/2/np.pi/G
-    return (m2**(3/2)*C**(-1/2) - m2)/Ms
+    return (m2**(3/2)*C**(-1/2) - m2)/Msun
 
 def get_mass_scp(K,M0,P,e):
     '''
@@ -402,7 +414,7 @@ def get_K2(K1, M, P, ecc):
         ecc: eccentricity of orbit
     '''
     #Newton-raphson
-    M_est = mass(K1,P,ecc,M*Ms)
+    M_est = mass(K1,P,ecc,M*Msun)
     k = semi_amplitude(M,M_est,P,ecc)
     while abs(k-K1)>50:
         M_est -= f_M(K1,M,M_est,P,ecc)/f_dash_M(K1,M,M_est,P,ecc)
@@ -412,12 +424,12 @@ def get_K2(K1, M, P, ecc):
     
     return K2
 
-def mass(K,P,e=0,M0=Ms):
+def mass(K,P,e=0,M0=Msun):
     '''
     from Lovis & Fischer, mass estimate for secondary ignoring its own mass
     '''
 
-    return ((K/28.4329)*(1-e**2)**(1/2)*(M0/Ms)**(2/3)*(P/365)**(1/3))*Mj/Ms
+    return ((K/28.4329)*(1-e**2)**(1/2)*(M0/Msun)**(2/3)*(P/365)**(1/3))*Mj/Msun
 
 def f_M(K1, M0, M1, P, ecc):
     '''
@@ -453,7 +465,7 @@ def sma_tot(P,M0,M1=0):
     orbit rather than of an individual body around the centre of mass
     returns a: semimajor axis (AU)
     '''
-    return ((P*24*3600)**2*G*(M0+M1)*Ms/(4*np.pi**2))**(1/3)/AU
+    return ((P*24*3600)**2*G*(M0+M1)*Msun/(4*np.pi**2))**(1/3)/AU
 
 def sma_2body(P,M0,M1):
     '''
@@ -477,7 +489,7 @@ def P_from_sma(a,M0,M1=0):
     This uses Kepler's 3rd law, so sem-major axis should be that of the combined 
     orbit rather than of an individual body around the centre of mass
     '''
-    return ((a*AU)**3*4*pi**2/G/(M0+M1)/Ms)**(1/2)/24/3600
+    return ((a*AU)**3*4*pi**2/G/(M0+M1)/Msun)**(1/2)/24/3600
 
 def frame_trans(Omega,I,w):
     '''
@@ -564,9 +576,9 @@ def wdot_dyn_full(M0,M1,M2,e1,e2,P1,P2,w1,W1,W2,I1,I2):
     a1 = sma_tot(P1,M0,M1)*AU
     a2 = sma_tot(P2,M0+M1,M2)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
-    m2 = M2*Ms
+    m0 = M0*Msun
+    m1 = M1*Msun
+    m2 = M2*Msun
     
     C2 = G/16*m0*m1*m2*a1**2/(m0+m1)/((1-e2**2)**(3/2))/(a2**3)
     
@@ -611,9 +623,9 @@ def wdot_dyn(M0,M1,M2,e1,e2,P1,P2,w1,inc):
     a1 = sma_tot(P1,M0,M1)*AU
     a2 = sma_tot(P2,M0+M1,M2)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
-    m2 = M2*Ms
+    m0 = M0*Msun
+    m1 = M1*Msun
+    m2 = M2*Msun
     
     C2 = G/16*m0*m1*m2*a1**2/(m0+m1)/((1-e2**2)**(3/2))/(a2**3)
     
@@ -642,10 +654,10 @@ def wdot_rot(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1):
     '''
     a1 = sma_tot(P1,M0,M1)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
-    R0 *= Rs
-    R1 *= Rs
+    m0 = M0*Msun
+    m1 = M1*Msun
+    R0 *= Rsun
+    R1 *= Rsun
     
     J20 = k0*Omega0**2*R0**3/3/G/m0
     J21 = k1*Omega1**2*R1**3/3/G/m1
@@ -686,10 +698,10 @@ def wdot_rot_full(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1,I,Omega,eps0,eps1,phi0,p
 
     a1 = sma_tot(P1,M0,M1)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
-    R0 *= Rs
-    R1 *= Rs
+    m0 = M0*Msun
+    m1 = M1*Msun
+    R0 *= Rsun
+    R1 *= Rsun
     
     J20 = k0*Omega0**2*R0**3/3/G/m0
     J21 = k1*Omega1**2*R1**3/3/G/m1
@@ -735,8 +747,8 @@ def wdot_spin_maxneg(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc):
         a: semi-major axis of orbit (AU)
     Returns rate of precession in arcsec/yr
     '''
-    r0 = R0*Rs/(a*AU)
-    r1 = R1*Rs/(a*AU)
+    r0 = R0*Rsun/(a*AU)
+    r1 = R1*Rsun/(a*AU)
     wbar = 2*np.pi/(P*24*3600)
     sini = np.sin(inc)
     wdot = -5*wbar/sini/sini/((1-e**2)**2)*(k0*r0**5*(Omega0/wbar)**2*(1+M1/M0) + k1*r1**5*(Omega1/wbar)**2*(1+M0/M1))
@@ -761,8 +773,8 @@ def wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2)
         a: semi-major axis of orbit (AU)
     Returns rate of precession in arcsec/yr
     '''
-    r0 = R0*Rs/(a*AU)
-    r1 = R1*Rs/(a*AU)
+    r0 = R0*Rsun/(a*AU)
+    r1 = R1*Rsun/(a*AU)
     wbar = 2*np.pi/(P*24*3600)
     sini = np.sin(inc)
     cosi = np.cos(inc)
@@ -790,8 +802,8 @@ def Wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2)
         a: semi-major axis of orbit (AU)
     Returns rate of precession in arcsec/yr
     '''
-    r0 = R0*Rs/(a*AU)
-    r1 = R1*Rs/(a*AU)
+    r0 = R0*Rsun/(a*AU)
+    r1 = R1*Rsun/(a*AU)
     wbar = 2*np.pi/(P*24*3600)
     sini = np.sin(inc)
     cosi = np.cos(inc)
@@ -814,8 +826,8 @@ def wdot_GR(M0,M1,e1,P1):
     
     a1 = sma_tot(P1,M0,M1)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
+    m0 = M0*Msun
+    m1 = M1*Msun
     
     Cg = 3*G**2*m0*m1*(m0+m1)/(a1**2*c**2)
     
@@ -840,10 +852,10 @@ def wdot_Tid(M0,M1,e1,P1,k0,k1,R0,R1):
     '''
     a1 = sma_tot(P1,M0,M1)*AU
     
-    m0 = M0*Ms
-    m1 = M1*Ms
-    r0 = R0*Rs
-    r1 = R1*Rs
+    m0 = M0*Msun
+    m1 = M1*Msun
+    r0 = R0*Rsun
+    r1 = R1*Rsun
     
     Ct0 = 0.5*k0*G*m1**2*r0**5/(a1**6)
     Ct1 = 0.5*k1*G*m0**2*r1**5/(a1**6)
@@ -869,7 +881,7 @@ def wdot_Tid_ragozzine(M1,M2,e,P,k2_1,k2_2,R1,R2):
         P: orbital period of inner orbit (days)
     '''
     n = 2*np.pi*365.25/P
-    a = sma_tot(P, M1,M2)*AU/Rs
+    a = sma_tot(P, M1,M2)*AU/Rsun
     f2e = (1-e**2)**(-5)*(1+3/2*e**2+1/8*e**4)
     wdottid1 = 7.5*k2_1*(R1/a)**5*M2/M1*f2e*n
     wdottid2 = 7.5*k2_2*(R2/a)**5*M1/M2*f2e*n
@@ -902,7 +914,7 @@ def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,tides=False,k2_0=0,k2_1=0,R0=1,R1=
 
     Dwd = wd1 - wd0
     i = 0
-    while abs(Dwd) >= 0.1:
+    while abs(Dwd) >= 0.001:
         m2 = (m1+m0)/2
         wd2 = wdot_dyn(M0,M1,m2,e1,e2,P1,P2,w1,inc)
         if (wd2 - wdot)*(wd0-wdot) < 0:
@@ -1053,17 +1065,17 @@ def delt_wdot(P,e,w0,wdot,time):
 
 def vtan(M0,M1,P):
     a0,a1=sma_2body(P,M0,M1)
-    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    v_circ = ((M0+M1)*Msun*G/a1/AU)**(1/2)
     return v_circ*M1/M0
 
 def vtan2(M0,M1,atot):
     a1 = atot*M0/(M0+M1)
-    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    v_circ = ((M0+M1)*Msun*G/a1/AU)**(1/2)
     return v_circ*M1/M0
 
 def vtan2_ecc(M0,M1,atot):
     a1 = atot*M0/(M0+M1)
-    v_circ = ((M0+M1)*Ms*G/a1/AU)**(1/2)
+    v_circ = ((M0+M1)*Msun*G/a1/AU)**(1/2)
     return v_circ*M1/M0
 
 def vtan_ecc(M0,M1,P,ecc,f):
@@ -1078,7 +1090,7 @@ def vtan_ecc(M0,M1,P,ecc,f):
         M0 = mass (M_sun)
     '''
     a = sma_tot(P,M0,M1)*AU
-    return (G*(M1*Ms)**2/(M0*Ms+M1*Ms))**(1/2)*(2*(1+ecc*np.cos(f))/a/(1-ecc**2) - 1/a)**(1/2)
+    return (G*(M1*Msun)**2/(M0*Msun+M1*Msun))**(1/2)*(2*(1+ecc*np.cos(f))/a/(1-ecc**2) - 1/a)**(1/2)
 
 def Thiele_Innes(a0,w,W,cosi):
     A = a0*(np.cos(w)*np.cos(W) - np.sin(w)*np.sin(W)*cosi)
@@ -1182,6 +1194,26 @@ def Campbell(A,B,F,G):
     
     return a,w,W,inc
 
+def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
+    '''
+    Gives the signal-noise ratio of an astrometric orbit as detectable in Gaia for a binary/exoplanetary orbit. Following the equations in Sahlmann, Triaud, and Martin 2015.
+        M0: Mass of primary body (Msun)
+        M1: Mass of secondary body (Msun)
+        P: Orbital period (days)
+        dist: distance to system (pc)
+        Beta: flux ratio F1/(F1+F0) assumed zero for SB1/exoplanet
+        Nobs: number of Gaia observations (default 70)
+        sigma: precision of individual epoch measurments (micro-arcseconds) default 30
+    '''
+    abar_rel = sma_tot(P,M0,M1) #semi-major axis of the orbit of the primary body in AU
+    arel = (abar_rel/dist)*10**6 #abar_rel is in AU, arel in micro-arcsec
+
+    f = M1/(M0+M1)
+    alpha = arel*(f-Beta)
+
+    SNR = alpha*(Nobs**0.5)/sigma
+    return SNR
+
 
 #################################################
 #ETV funtions
@@ -1194,8 +1226,8 @@ def semi_amp_LTTE(P,M0,M1,inc=np.pi/2):
         M0: Mass of eclipsing binery (M_sun)
         M1: Mass of perturbing body (M_sun)
     '''
-    M_tot = (M0+M1)*Ms
-    m = M1*Ms
+    M_tot = (M0+M1)*Msun
+    m = M1*Msun
     Period = P*24*3600
     
     return m/M_tot/c*(G*M_tot/4/(np.pi**2))**(1/3)*Period**(2/3)
@@ -1266,6 +1298,159 @@ def ephem_etv(epoch, ref_T, ephem1,  ephem2=0, ephem3=0):
 
 # def precession_etv(epoch, )
 
+#################################################
+#one-two punch
+#################################################
+
+def P_from_vel(M,v,e,w):
+    '''
+    Planet period based on orbital velocity given:
+        M: total inner mass (M_sun)
+        v: measured velocity at transit (m/s)
+        e: eccentricity of orbit
+        w: argument of pericentre (rad)
+    returns:
+        P: planet orbital period (days)
+    '''
+    return (2*np.pi*G*M*Msun/v**3 *((e*np.sin(w) + 1)/(1-e**2)**(0.5))**3)/3600/24
+
+def vel_transit(P,e,Tecl,T1,T2,wbin,M0,M1,R):
+    '''
+    Calculate velocity planet during a circumbinary transit given:
+        P: orbital period of the binary (days)
+        e: binary eccentricity
+        Tecl: Time of the primary/secondary eclipse (days) primary/secondary depending on which is being transited
+        T1: ingress start/end time (days)
+        T2: egress start/end time (days) start/end doesn't matter so long as consostent between T1 and T2
+        wbin: argument of pericentre of the ***star being transited*** (rad) *make sure this is not the w of the other star
+        M0: Mass of transited star (M_sun)
+        M1: mass of companion star (M_sun)
+        R: Radius of transited star (R_sun)
+    Returns:
+        vel: velocity (m/s)
+    '''
+
+    a=sma_2body(P,M0,M1)[0]*AU
+    phi = np.pi/2 - wbin
+
+    Mecl = mean_anom(phi,e)
+    
+    M1, M2 = 2*np.pi*(T1-Tecl)/P + Mecl, 2*np.pi*(T2-Tecl)/P + Mecl
+    E1, E2 = ecc_anomaly(M1,e), ecc_anomaly(M2,e)
+    nu1, nu2 = true_anomaly(E1,e), true_anomaly(E2,e)
+    
+    theta1, theta2 = nu1 - phi, nu2 - phi
+
+    r1 = a*(1-e**2)/(1+e*np.cos(nu1))
+    r2 = a*(1-e**2)/(1+e*np.cos(nu2))
+
+    x1 = r1*np.sin(theta1)
+    x2 = r2*np.sin(theta2)
+
+
+    DX = 2*R*Rsun - (x2-x1)
+    
+    DT = (T2-T1)*24*3600
+
+    vel = DX/DT
+    return vel
+
+def onepunch_period(P,ebin,Tecl,T1,T2,wbin,M0,M1,R,epl=0,wpl=0):
+    '''
+    Estimate of orbital period of circumbinary planet based velocity planet during a single transit given:
+        P: orbital period of the binary (days)
+        ebin: binary eccentricity
+        Tecl: Time of the primary/secondary eclipse (days) primary/secondary depending on which is being transited
+        T1: ingress start/end time (days)
+        T2: egress start/end time (days) start/end doesn't matter so long as consostent between T1 and T2
+        wbin: argument of pericentre of the ***star being transited*** (rad) *make sure this is not the w of the other star
+        M0: Mass of transited star (M_sun)
+        M1: mass of companion star (M_sun)
+        R: Radius of transited star (R_sun)
+        epl: planet eccentricity (assumed 0)
+        wpl: planet argument of pericentre (assumed 0)
+    Returns:
+        P: Planet orbital period (days)
+    '''
+
+    vel = vel_transit(P,ebin,Tecl,T1,T2,wbin,M0,M1,R)
+    P = P_from_vel(M0+M1,vel,epl,wpl)
+
+    return P
+
+def vel_onetwo(P,e,Tecl1,Tecl2,T1,T2,w1,w2,M0,M1):
+    '''
+    Calculate velocity planet during a circumbinary transit. The 1 and 2 parameters should be ordered in the time order to assess prograde vs retrograde:
+        P: orbital period of the binary (days)
+        e: binary eccentricity
+        Tecl1: Time of the eclipse of the first star (days) 
+        Tecl2: Time of the eclipse of the second star (days) 
+        T1: mid-transit time of first transit (days)
+        T2: mid-transit time of second transit (days)
+        w1: argument of pericentre of the first star's orbit(rad) *make sure this is not the w of the other star
+        w2: argument of pericentre of the second star's orbit(rad) *make sure this is not the w of the other star
+        M0: Mass of first star (M_sun)
+        M1: mass of second star (M_sun)
+    Returns:
+        vel: velocity (m/s)
+        prograde: bool, true if prograde orbit
+    '''
+
+    a1=sma_2body(P,M0,M1)[0]*AU
+    a2=sma_2body(P,M0,M1)[1]*AU
+
+    phi1 = np.pi/2 - w1
+    phi2 = np.pi/2 - w2
+
+    Mecl1 = mean_anom(phi1,e)
+    Mecl2 = mean_anom(phi2,e)
+    
+    M1, M2 = 2*np.pi*(T1-Tecl1)/P + Mecl1, 2*np.pi*(T2-Tecl2)/P + Mecl2
+    E1, E2 = ecc_anomaly(M1,e), ecc_anomaly(M2,e)
+    nu1, nu2 = true_anomaly(E1,e), true_anomaly(E2,e)
+    
+    theta1, theta2 = nu1 - phi1, nu2 - phi2
+
+    r1 = a1*(1-e**2)/(1+e*np.cos(nu1))
+    r2 = a2*(1-e**2)/(1+e*np.cos(nu2))
+
+    x1 = -r1*np.sin(theta1)
+    x2 = -r2*np.sin(theta2)
+
+    prog = x2>x1
+
+    DX = abs(x2-x1)
+    
+    DT = (T2-T1)*24*3600
+
+    vel = DX/DT
+
+    return vel, prog
+
+def onetwopunch_period(P,ebin,Tecl1,Tecl2,T1,T2,w1,w2,M0,M1,epl=0,wpl=0):
+    '''
+    Estimate of orbital period of circumbinary planet based velocity planet during a one-two punch double transit given:
+        P: orbital period of the binary (days)
+        e: binary eccentricity
+        Tecl1: Time of the eclipse of the first star (days) 
+        Tecl2: Time of the eclipse of the second star (days) 
+        T1: mid-transit time of first transit (days)
+        T2: mid-transit time of second transit (days)
+        w1: argument of pericentre of the first star's orbit(rad) *make sure this is not the w of the other star
+        w2: argument of pericentre of the second star's orbit(rad) *make sure this is not the w of the other star
+        M0: Mass of first star (M_sun)
+        M1: mass of second star (M_sun)
+        epl: planet eccentricity (assumed 0)
+        wpl: planet argument of pericentre (assumed 0)
+    Returns:
+        P: Planet orbital period (days)
+        prograde: bool, true if prograde orbit
+    '''
+
+    vel,progs = vel_onetwo(P,ebin,Tecl1,Tecl2,T1,T2,w1,w2,M0,M1)
+    P = P_from_vel(M0+M1,vel,epl,wpl)
+
+    return P,progs
 
 #################################################
 #other functions
@@ -1275,7 +1460,7 @@ def ephem_etv(epoch, ref_T, ephem1,  ephem2=0, ephem3=0):
 def T_stab(M0,M1,a1,a2,e2,P2):
     '''
     Calculate stability timescale analystically following Zhang, Naoz and Will 2023
-    Assuems binary has circular orbit, and massless planet
+    Assumes binary has circular orbit, and massless planet
     Units of M0 and M1 should be the same, as with a1 and a2
     returns stability timescale in the units of P2
     '''
@@ -1311,9 +1496,18 @@ def HW_stab_lim_ext(a,e,mu):
     return 1.6 +5.1*e - 2.22*e**2 + 4.12*mu - 4.27*e*mu - 5.09*mu**2
 
 def get_HW_stab(M0,M1,P,e,ext=True,param='P'):
+    '''
+    Circumbinary stability criterion (Holman & Wiegert 1999)
+        M0: primary mass (Msun)
+        M1: Secondary mass (Msun)
+        P: orbital period (days)
+        e: eccentricity
+    returns:
+        a: Period/semi major axis of stability limit (days/AU)
+    '''
     
     a = sma_tot(P,M0,M1)
-    mu = min(M1/(M0+M1),M0/(M0+M1))
+    mu = np.minimum(M1/(M0+M1),M0/(M0+M1))
     if ext:
         a_pl = HW_stab_lim_ext(a, e, mu)*a
     else:
@@ -1329,9 +1523,9 @@ def get_HW_stab(M0,M1,P,e,ext=True,param='P'):
 
 def K_BBH(m1,m2,m3,pin,pout,I,ecc):
     
-    M1 = m1*Ms
-    M2 = m2*Ms
-    M3 = m3*Ms
+    M1 = m1*Msun
+    M2 = m2*Msun
+    M3 = m3*Msun
     
     M12 = M1+M2
     M123=M12+M3
@@ -1385,33 +1579,3 @@ def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0
     
     return clp_rv.freq, clp_rv.power, fapLevels, plevels, max_frequency
 
-# import matplotlib.pyplot as plt
-# import time
-# wdotmu = 0.186*3600
-# wdotsig = 0.056*3600
-# number = 10000
-# P = np.random.rand(number)*800 + 40
-# wdot = np.random.randn(number)*wdotsig + wdotmu
-# t0 = time.time()
-# for i in range(number):
-#     plt.scatter(P[i],planet_mass(2.151,1.992,0.2419,0,8.289761,P[i],4.36,0,wdot[i])*Ms/Mj,c='black',s=8,alpha=0.1)
-# plt.xlabel('Period (days)')
-# plt.ylabel(r'Mass (M$_J$)')
-# # plt.ylim([np.log10(0.1),np.log10(20)])
-# plt.semilogy()
-# xax = np.linspace(40,840,60)
-# Mbin = np.ones(len(xax))*(2.151+1.992)
-# es = np.ones(len(xax))*0.2419
-# Ks = np.ones(len(xax))*5000
-# ms = np.array(get_mass(Ks,Mbin,xax,es))*Ms/Mj
-# plt.plot(xax,ms,c='b',label='5 km/s')
-# Ks = np.ones(len(xax))*1000
-# ms = np.array(get_mass(Ks,Mbin,xax,es))*Ms/Mj
-# plt.plot(xax,ms,c='r',label='1 km/s')
-# Ks = np.ones(len(xax))*400
-# ms = np.array(get_mass(Ks,Mbin,xax,es))*Ms/Mj
-# plt.plot(xax,ms,c='g',label='400 m/s')
-# plt.axhline(80,ls='--',c='grey')
-# plt.axhline(13,ls='--',c='grey')
-# plt.legend()
-# print(time.time() - t0)
