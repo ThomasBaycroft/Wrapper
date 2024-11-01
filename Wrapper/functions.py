@@ -1537,6 +1537,28 @@ def K_BBH(m1,m2,m3,pin,pout,I,ecc):
     
     return M1*M2/(M12**2)*(M123/M12)**(2/3)*(Pin/Pout)**(7/3)*V00*np.sin(I)*(1-ecc)**(-7/2)
 
+def interpolate(xs,ys,value):
+    '''
+    linear interpolation:
+        xs: input function x values (numpy array)
+        ys: input function y values (numpy array)
+        value: x value(s) to interpolate (int, float, numpy array, list)
+    returns:
+        interpolated value(s) float or numpy array
+    '''
+    if isinstance(value,np.ndarray) or isinstance(value,list):
+        interps=[]
+        for val in value:
+            print(val)
+            ysides = ys[[sum(val>xs)-1,sum(val>xs)]]
+            xsides = xs[[sum(val>xs)-1,sum(val>xs)]]
+            interps.append(sum((1-abs(val-xsides))*ysides))
+        return(np.array(interps))
+    else:
+        ysides = ys[[sum(value>xs)-1,sum(value>xs)]]
+        xsides = xs[[sum(value>xs)-1,sum(value>xs)]]
+        return sum((1-abs(value-xsides))*ysides)
+
 ######################################
 #Lombe-Scargle
 ######################################
