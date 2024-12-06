@@ -39,7 +39,7 @@ def keplerian(time, p, k, ecc, omega, t0, vsys):
         vsys: systemic velocity (float)
     Returns the array (same size as time) of radial velocities
     '''
-    vel = np.zeros_like(time)
+    vel = np.zeros_like(time,dtype=float)
     p, k, ecc, omega, t0 = np.atleast_1d(p, k, ecc, omega, t0)
 
     with np.errstate(divide='raise'):
@@ -111,6 +111,23 @@ def mean_anom(f,e):
     M = E - e*np.sin(E)
     return M
 
+def M_from_f(f,e):
+    '''
+    Calculate the mean anomaly from the true anomaly
+    '''
+    E = 2. * np.arctan( np.sqrt((1.-e)/(1.+e)) * np.tan(f/2.))
+    M = E - e*np.sin(E)
+    return M
+
+def transit_time_keplerian(P,e,w,Tperi):
+    '''
+    Obtain approximate time of transit based on keplerian orbit, w is the w of the primary star not the transiting companion
+    '''
+    f = np.pi/2 - w
+    M = M_from_f(f,e)
+    t = Tperi + P*M/2/np.pi
+    return t
+
 def ellip_rectang(t,P,e,Tper):
     
     M = 2.*pi * (t-Tper)/P
@@ -175,7 +192,7 @@ def keplerian_plus(time, p, k, ecc, omega, omdot, t0, vsys):
         vel += vsys 
     return vel
 
-def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, relativistic_correction, tidal_correction):
+def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, relativistic_correction, tidal_correction,cosi=0):
     '''
     RV keplerian function with a linear apsidal precession term added and the option to include relativistic and tidal corrections, given:
         time: array of times
@@ -194,6 +211,8 @@ def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, rela
     vel = np.zeros_like(time)
     p, k, ecc, omega, omdot, t0 = np.atleast_1d(p, k, ecc, omega, omdot, t0)
 
+    sini = (1-cosi**2)**(0.5)
+
     with np.errstate(divide='raise'):
         for i in range(p.size):
             p[i] = Period_change(p[i], ecc[i], omdot[i])
@@ -203,7 +222,7 @@ def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, rela
             wdot = omdot[i]*(4.8481*(0.000001)/365.25) #convert from arcsec per year to radians per day
             w = omega[i]+wdot*(time-t0[i])
             vel += k[i] * (np.cos(nu+w) + ecc[i]*np.cos(w))
-            extra_vel = post_newtonian(k[i], nu, ecc[i], w, p[i], M0, R0, M1, relativistic_correction, tidal_correction)
+            extra_vel = post_newtonian(k[i], nu, ecc[i], w, p[i], M0, R0, M1, relativistic_correction, tidal_correction,sini)
 
         vel += vsys + extra_vel
     return vel
@@ -222,7 +241,7 @@ def post_newtonian(K0, nu, ecc, w, P, M0, R0, M1, relativistic_correction, tidal
     if tidal_correction:
         if R0 == None:
             R0 = M0**0.8
-        delta_v_tide = v_tide(R0, M0, P, nu, w, M1, "M_s")
+        delta_v_tide = v_tide(R0, M0, P, nu, w, M1, "M_s",sini)
         v += delta_v_tide
     if relativistic_correction:
         cl = c
@@ -242,7 +261,7 @@ def Period_change(P2,e,wdot):
     '''
     return P2*(1+wdot/(3600*180*365.25*2)*P2)
 
-def v_tide(R_star, M_star, P, f, w, M_p, M_p_unit):
+def v_tide(R_star, M_star, P, f, w, M_p, M_p_unit='M_s',sini=1):
     '''
     https://arxiv.org/pdf/1107.6005.pdf Equation 17
 
@@ -252,21 +271,24 @@ def v_tide(R_star, M_star, P, f, w, M_p, M_p_unit):
         P = Period (days) float
         f = Mean motion
         phi_0 = 
-        M_p = Mass of planet (or orbiting body) (M_j) float
+        M_p = Mass of planet (or orbiting body) (M_sun) float
         M_p_unit = Unit "M_j"/"M_s" str
 
     returns:
         v_tide = Velocity of tide (m/s) float
         
     '''
-    
+    M0 = M_star
+    M1 = M_p
     phi_0 = np.pi/2 - w #phi_0 defined relative to argument of pericenter
     
-    M_ratio = Msun/Mj
-    if M_p_unit == "M_s":
-        M_p *= M_ratio
+    # M_ratio = Msun/Mj
+    # if M_p_unit == "M_s":
+    #     M_p *= M_ratio
         
-    v_tide = ((((1.13 * M_p)/(M_star * (M_star + (M_p/M_ratio)))) * (R_star**4)) / P**3)*np.sin(2*(f-phi_0))
+    # v_tide = ((((1.13 * M_p)/(M_star * (M_star + (M_p/M_ratio)))) * (R_star**4)) / P**3)*sini**2*np.sin(2*(f-phi_0))
+
+    v_tide =  1184 * M1/(M0*(M0+M1))* (R_star**4) /(P**3) *sini**2*np.sin(2*(f-phi_0))
 
     return v_tide
 
@@ -1029,7 +1051,7 @@ def wdot_tpri_diff(w0,wdot,time,P,e):
     Calculate change in offset between primary and secondary eclipses due to apsidal precession of the binary given:
         w0: initial w (rad)
         wdot: precession rate (arcsec/yr)
-        time: timespan between measurements
+        time: timespan between measurements (days)
         P: period of the binary (days)
         e: eccentricity of the binary 
     returns offset in seconds
@@ -1453,7 +1475,7 @@ def onetwopunch_period(P,ebin,Tecl1,Tecl2,T1,T2,w1,w2,M0,M1,epl=0,wpl=0):
     return P,progs
 
 #################################################
-#other functions
+#Circumbinary Stability
 #################################################
 
 
@@ -1521,44 +1543,6 @@ def get_HW_stab(M0,M1,P,e,ext=True,param='P'):
     
     return ret
 
-def K_BBH(m1,m2,m3,pin,pout,I,ecc):
-    
-    M1 = m1*Msun
-    M2 = m2*Msun
-    M3 = m3*Msun
-    
-    M12 = M1+M2
-    M123=M12+M3
-    
-    Pin = pin*24*3600
-    Pout = pout*24*3600
-    
-    V00 = ((2*np.pi*G*(M12)**3)/((M123)**2*Pout))**(1/3)
-    
-    return M1*M2/(M12**2)*(M123/M12)**(2/3)*(Pin/Pout)**(7/3)*V00*np.sin(I)*(1-ecc)**(-7/2)
-
-def interpolate(xs,ys,value):
-    '''
-    linear interpolation:
-        xs: input function x values (numpy array)
-        ys: input function y values (numpy array)
-        value: x value(s) to interpolate (int, float, numpy array, list)
-    returns:
-        interpolated value(s) float or numpy array
-    '''
-    if isinstance(value,np.ndarray) or isinstance(value,list):
-        interps=[]
-        for val in value:
-            print(val)
-            ysides = ys[[sum(val>xs)-1,sum(val>xs)]]
-            xsides = xs[[sum(val>xs)-1,sum(val>xs)]]
-            interps.append(sum((1-abs(val-xsides))*ysides))
-        return(np.array(interps))
-    else:
-        ysides = ys[[sum(value>xs)-1,sum(value>xs)]]
-        xsides = xs[[sum(value>xs)-1,sum(value>xs)]]
-        return sum((1-abs(value-xsides))*ysides)
-
 ######################################
 #Lombe-Scargle
 ######################################
@@ -1600,4 +1584,66 @@ def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0
     plevels = clp_rv.powerLevel(fapLevels)
     
     return clp_rv.freq, clp_rv.power, fapLevels, plevels, max_frequency
+
+#################################################
+#distributions
+#################################################
+
+def Gaussian_samps(Number,mu,sig):
+    return np.random.randn(Number)*sig + mu
+# def Gaussian_pdf(mu,sig):
+
+def Uniform_samps(Number,a,b):
+    return np.random.rand(Number)*(b-a) + a
+
+def LogUniform_samps(Number,a,b):
+    return 10**(np.random.rand(Number)*(np.log10(b) - np.log10(a)) + np.log10(a))
+
+def LogUniform_pdf(value,a,b):
+    return sp.stats.loguniform(a, b).pdf(value)
+
+def Uniform_pdf(value,a,b):
+    return sp.stats.uniform(a, b).pdf(value)
+
+
+#################################################
+#Other Functions
+#################################################
+
+def K_BBH(m1,m2,m3,pin,pout,I,ecc):
+    
+    M1 = m1*Msun
+    M2 = m2*Msun
+    M3 = m3*Msun
+    
+    M12 = M1+M2
+    M123=M12+M3
+    
+    Pin = pin*24*3600
+    Pout = pout*24*3600
+    
+    V00 = ((2*np.pi*G*(M12)**3)/((M123)**2*Pout))**(1/3)
+    
+    return M1*M2/(M12**2)*(M123/M12)**(2/3)*(Pin/Pout)**(7/3)*V00*np.sin(I)*(1-ecc)**(-7/2)
+
+def interpolate(xs,ys,value):
+    '''
+    linear interpolation:
+        xs: input function x values (numpy array)
+        ys: input function y values (numpy array)
+        value: x value(s) to interpolate (int, float, numpy array, list)
+    returns:
+        interpolated value(s) float or numpy array
+    '''
+    if isinstance(value,np.ndarray) or isinstance(value,list):
+        interps=[]
+        for val in value:
+            ysides = ys[[sum(val>xs)-1,sum(val>xs)]]
+            xsides = xs[[sum(val>xs)-1,sum(val>xs)]]
+            interps.append(sum((1-abs(val-xsides))*ysides))
+        return(np.array(interps))
+    else:
+        ysides = ys[[sum(value>xs)-1,sum(value>xs)]]
+        xsides = xs[[sum(value>xs)-1,sum(value>xs)]]
+        return sum((1-abs(value-xsides))*ysides)
 

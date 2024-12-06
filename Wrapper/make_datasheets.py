@@ -369,7 +369,7 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
                 dat = sec_data_list[i]
                 ax.errorbar(dat.bjds,dat.residuals()+data.drift(),yerr=dat.svrad,fmt='.',c='b',mfc='none',ecolor='darkgrey')
         cont = np.arange(min(times),max(times),0.1)
-        ax.plot(cont,pri_data_list[0].drift(times=cont),c='black',alpha=0.8)
+        ax.plot(cont,pri_data_list[0].drift(times='cont'),c='black',alpha=0.8)
     
     fig.set_size_inches(7,4)
     plt.savefig(outputloc+system+'_'+str(sheet_number)+'_timeseries.pdf')
