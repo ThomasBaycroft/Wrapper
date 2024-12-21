@@ -23,7 +23,7 @@ from astropy import constants
 Ms = constants.M_sun.value
 Mj = constants.M_jup.value
 
-colours = ['r','b','g','m','c','darkviolet','orange']
+colours = ['r','b','g','m','c','darkviolet','orange','cornflowerblue','indianred','forestgreen']
 
 def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bin,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
     
@@ -451,7 +451,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     ax4 = plt.subplot(gs2[0,1])
     ax5 = plt.subplot(gs2[0,2])
     
-    colrs = ['r','g','m','c','darkviolet','orange']
+    colrs = ['r','g','m','c','darkviolet','orange','cornflowerblue','indianred','forestgreen']
     
     ax3.scatter(full_posteriors.P[no_pl_ind],full_posteriors.ecc[no_pl_ind],c='b',alpha=0.1,s=1)
     for i,ind in enumerate(indices):

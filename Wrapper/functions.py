@@ -1114,14 +1114,6 @@ def vtan_ecc(M0,M1,P,ecc,f):
     a = sma_tot(P,M0,M1)*AU
     return (G*(M1*Msun)**2/(M0*Msun+M1*Msun))**(1/2)*(2*(1+ecc*np.cos(f))/a/(1-ecc**2) - 1/a)**(1/2)
 
-def Thiele_Innes(a0,w,W,cosi):
-    A = a0*(np.cos(w)*np.cos(W) - np.sin(w)*np.sin(W)*cosi)
-    B = a0*(np.cos(w)*np.sin(W) + np.sin(w)*np.cos(W)*cosi)
-    F = -a0*(np.sin(w)*np.cos(W) + np.cos(w)*np.sin(W)*cosi)
-    G = -a0*(np.sin(w)*np.sin(W) - np.cos(w)*np.cos(W)*cosi)
-    
-    return A,B,F,G
-
 def wss(da,dd,par,mua,mud,t,psi,pf,tref):
     T = t - tref
     return (da + mua*T)*np.sin(psi) + (dd +mud*T)*np.cos(psi) +par*pf
@@ -1148,6 +1140,14 @@ def ra_dec_orb(P,Tper,e,cosi,W,w,a0,t):
 def ra_dec_TI(A,B,F,G,P,Tper,e,t):
     X,Y = ellip_rectang(t, P, e, Tper)
     return B*X + G*Y, A*X + F*Y
+
+def Thiele_Innes(a0,w,W,cosi):
+    A = a0*(np.cos(w)*np.cos(W) - np.sin(w)*np.sin(W)*cosi)
+    B = a0*(np.cos(w)*np.sin(W) + np.sin(w)*np.cos(W)*cosi)
+    F = -a0*(np.sin(w)*np.cos(W) + np.cos(w)*np.sin(W)*cosi)
+    G = -a0*(np.sin(w)*np.sin(W) - np.cos(w)*np.cos(W)*cosi)
+    
+    return A,B,F,G
 
 def Campbell_a(A,B,F,G):
     u = (A**2 + B**2 + F**2 + G**2)/2
@@ -1586,15 +1586,20 @@ def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0
     return clp_rv.freq, clp_rv.power, fapLevels, plevels, max_frequency
 
 #################################################
-#distributions
+#distributions and statistics
 #################################################
 
 def Gaussian_samps(Number,mu,sig):
     return np.random.randn(Number)*sig + mu
-# def Gaussian_pdf(mu,sig):
+
+def Gaussian_pdf(value,mu,sig):
+    return sp.stats.norm(mu,sig).pdf(value)
 
 def Uniform_samps(Number,a,b):
     return np.random.rand(Number)*(b-a) + a
+
+def Uniform_pdf(value,a,b):
+    return sp.stats.uniform(a, b).pdf(value)
 
 def LogUniform_samps(Number,a,b):
     return 10**(np.random.rand(Number)*(np.log10(b) - np.log10(a)) + np.log10(a))
@@ -1602,8 +1607,20 @@ def LogUniform_samps(Number,a,b):
 def LogUniform_pdf(value,a,b):
     return sp.stats.loguniform(a, b).pdf(value)
 
-def Uniform_pdf(value,a,b):
-    return sp.stats.uniform(a, b).pdf(value)
+def LogNormal_samps(Number,mu,sig):
+    return np.random.lognormal(mean=mu,sigma=sig,size=Number)
+
+def LogNormal_samps2(Number,mu,sig):
+    return 10**(np.random.randn(Number)*sig + np.log10(mu))
+
+def LogNormal_pdf(value,mu,sig):
+    return sp.stats.lognorm(s=sig,scale=np.exp(mu)).pdf(value)
+
+def chi2_red(resids,errs,numparams):
+    nobs = len(resids)
+    nu = nobs - numparams
+    chi2 = np.sum((resids/errs)**2)
+    return chi2/nu
 
 
 #################################################
@@ -1640,10 +1657,12 @@ def interpolate(xs,ys,value):
         for val in value:
             ysides = ys[[sum(val>xs)-1,sum(val>xs)]]
             xsides = xs[[sum(val>xs)-1,sum(val>xs)]]
-            interps.append(sum((1-abs(val-xsides))*ysides))
+            width = abs(xsides[1] - xsides[0])
+            interps.append(sum((width-abs(val-xsides))/width*ysides))
         return(np.array(interps))
     else:
         ysides = ys[[sum(value>xs)-1,sum(value>xs)]]
         xsides = xs[[sum(value>xs)-1,sum(value>xs)]]
-        return sum((1-abs(value-xsides))*ysides)
+        width = abs(xsides[1] - xsides[0])
+        return sum((width-abs(value-xsides))/width*ysides)
 

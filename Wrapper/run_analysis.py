@@ -257,7 +257,8 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     
     #then if ecc not distinct from zero in the posteriors, choose the maximum likelihood with ecc<0.1
     for i in range(numpl):
-        e_hist = np.histogram(posteriors['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
+        # e_hist = np.histogram(posteriors['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
+        e_hist = np.histogram(posts['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
         if np.argmax(e_hist) in [0,1,2]:
             emax = 0.1
         else:
