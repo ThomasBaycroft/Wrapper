@@ -13,6 +13,7 @@ from PyAstronomy.pyTiming import pyPeriod
 
 pi = np.pi
 c = constants.c.value
+pc = constants.pc.value
 G = constants.G.value
 AU = constants.au.value
 Rsun = constants.R_sun.value
@@ -20,6 +21,7 @@ Msun = constants.M_sun.value
 Mj = constants.M_jup.value
 Me = constants.M_earth.value
 Re = constants.R_earth.value
+Rj = constants.R_jup.value
 Mnep = 1.0241*10**(26)
 Msat = 5.68319*10**(26)
 
@@ -292,7 +294,7 @@ def v_tide(R_star, M_star, P, f, w, M_p, M_p_unit='M_s',sini=1):
 
     return v_tide
 
-def masses(SB2,K,P,e,M1=1,q=1):
+def masses(SB2,K,P,e,M1=1,q=1,sini=1):
     '''
     Returns the masses of the primary and secondary star, given:
         K: Semi-amplitude (m/s)
@@ -306,10 +308,10 @@ def masses(SB2,K,P,e,M1=1,q=1):
     '''    
     if SB2:
         mass_func = (P*24*3600)*(K/q)**3*(1-e**2)**(3/2)/2/np.pi/G
-        M1 = (mass_func*(1+q)**2)/Msun
+        M1 = (mass_func*(1+q)**2)/Msun/(sini**3)
         M2 = M1*q
     else:
-        M2 = get_mass(K,M1,P,e)
+        M2 = get_mass(K,M1,P,e)/sini
             
     return M1,M2
 
@@ -565,6 +567,10 @@ def W_xyz(x,y,z,dx,dy,dz):
     arg = -hx/hy
     Omega = np.arctan2(-hx,hy)
     return Omega
+
+def I_mut(I1,I2,W1,W2):
+    cosI = np.cos(I1)*np.cos(I2) - np.sin(I1)*np.sin(I2)*np.cos(W1-W2)
+    return np.arccos(cosI)
 
 
 #################################################
@@ -1287,10 +1293,10 @@ def ET_wdot_mass(ephem1,P,M0,M1,e1,P2,w1,e2=0):
 
 def keplerian_etv(epoch, ref_T, ephem1, p, k, ecc, omega, t0):
     '''
-    Obtains the eclipse time variations due to a keplerain orbit for an array of times time, given 
+    Obtains the eclipse time variations due to a keplerian orbit for an array of times, given 
     Period P, semi-amplitude k (in seconds), eccentricity ecc, argument of pericentre omega, time of 
-    preicentre passage t0 and systemic velocity vsys.
-    Returns the array (same size as time) of radial velocities
+    preicentre passage t0
+    Returns the array (same size as time) of eclipse times in days
     '''
     time = epoch*ephem1 +ref_T
     et = np.zeros_like(time)
@@ -1343,7 +1349,7 @@ def vel_transit(P,e,Tecl,T1,T2,wbin,M0,M1,R):
         e: binary eccentricity
         Tecl: Time of the primary/secondary eclipse (days) primary/secondary depending on which is being transited
         T1: ingress start/end time (days)
-        T2: egress start/end time (days) start/end doesn't matter so long as consostent between T1 and T2
+        T2: egress start/end time (days) start/end doesn't matter so long as consistent between T1 and T2
         wbin: argument of pericentre of the ***star being transited*** (rad) *make sure this is not the w of the other star
         M0: Mass of transited star (M_sun)
         M1: mass of companion star (M_sun)
@@ -1384,7 +1390,7 @@ def onepunch_period(P,ebin,Tecl,T1,T2,wbin,M0,M1,R,epl=0,wpl=0):
         ebin: binary eccentricity
         Tecl: Time of the primary/secondary eclipse (days) primary/secondary depending on which is being transited
         T1: ingress start/end time (days)
-        T2: egress start/end time (days) start/end doesn't matter so long as consostent between T1 and T2
+        T2: egress start/end time (days) start/end doesn't matter so long as consistent between T1 and T2
         wbin: argument of pericentre of the ***star being transited*** (rad) *make sure this is not the w of the other star
         M0: Mass of transited star (M_sun)
         M1: mass of companion star (M_sun)
@@ -1573,6 +1579,20 @@ def get_spectral_window_function(freqs, times):
     return np.abs(w_v)
 
 def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0.01,0.001])):
+    '''
+    Calculate Lombe-scargle periodogram, takes:
+        times: datatimes (bjd)
+        rvs: radial velocities (m/s) 
+        errs: rv errors (m/s)
+        p_range: period range to search over (i.e your period prior)
+        faplevels: False alarm probability levels that you want to calculate
+    Returns:
+        clp_rv.freq: Frequency array (1/clp_rv.freq will give the periods)
+        clp_rv.power: Power array for each frequency/period
+        fapLevels: same as input fap levels
+        plevels: power for each FAP
+        max_frequency: frequency which has the highest power
+    '''
     
     fbeg, fend = 1/p_range[1], 1/p_range[0]
     

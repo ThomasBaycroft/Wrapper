@@ -7,6 +7,7 @@ Created on Sat Jan  7 20:08:32 2023
 """
 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 import numpy as np
 from . import functions as fcs
 from . import run_analysis as ra
@@ -80,7 +81,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     
     return fig, ax
 
-def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='grey',inflate_errors=False,bin_phase=False,true_anom=False,label=''):
+def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='grey',inflate_errors=False,bin_phase=False,marker='.',true_anom=False,label='',alpha=1):
     '''
     plots a single RV curve on an axis given:
         ax: the ax object on which to plot
@@ -94,8 +95,10 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
         inflate_error: bool; whether to make the errorbars the quadratic sum of uncertainty and jitter
         bin_phase: whether to also plot the data binned into 10 phases to help guide the eye
         true_anom: whether to plot the x axis as true anomaly rather than mean anomaly
+        label: label?
+        alpha: transparency for the datapoints
     '''
-    
+    alp = alpha
     if fill:
         fc = colour
     else:
@@ -117,59 +120,69 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
     times = np.linspace(min(data.bjds),max(data.bjds),20000)
     if body == 'binary':
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_binary()/1000)
-        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,fmt='.',c=colour,mfc=fc,markersize=7.,label=label)
-        ax.errorbar(phase(data.bjds)-1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
-        ax.errorbar(phase(data.bjds)+1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,fmt=marker,c=colour,mfc=fc,markersize=7.,label=label,alpha=alp)
+        ax.errorbar(phase(data.bjds)-1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
+        ax.errorbar(phase(data.bjds)+1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
         if lines:
             ax.plot(np.sort(phase(times)),orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='black')
-            ax.plot(np.sort(phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='grey',alpha=0.6)
-            ax.plot(np.sort(phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='grey',alpha=0.6)
+            ax.plot(np.sort(phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='black',alpha=0.5)
+            ax.plot(np.sort(phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='black',alpha=0.5)
         ax.axhline(0,c='grey',ls='--')
         ax.set(xlim=[-0.1,1.1],ylabel=r'RV (km s$^{-1}$)')
     elif body == 'binary_unphased':
         sub = 2400000
-        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,fmt='.',c=colour,mfc=fc,label=label)
+        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
             ax.plot(times-sub,orb.RV_keplerian_add(times)/1000,c=colour,alpha=0.7)
         ax.set(ylabel=r'RV km s$^{-1}$')
     elif body == 'residuals_unphased':
         sub = 2400000
-        ax.errorbar(data.bjds-sub,data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(data.bjds-sub,data.residuals()/1000,fmt='.',c=colour,mfc=fc,label=label)
+        ax.errorbar(data.bjds-sub,data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(data.bjds-sub,data.residuals()/1000,fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
         m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
         ax.set(ylim=[-m,m],ylabel = 'Residuals')#,xlabel='Time (bjd-'+str(sub)+')')
         
     elif body == 'residuals':
-        ax.errorbar(phase(data.bjds),data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(phase(data.bjds),data.residuals()/1000,fmt='.',c=colour,mfc=fc,label=label)
-        ax.errorbar(phase(data.bjds)-1,data.residuals()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
-        ax.errorbar(phase(data.bjds)+1,data.residuals()/1000,yerr=erbars/1000,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(phase(data.bjds),data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds),data.residuals()/1000,fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
+        ax.errorbar(phase(data.bjds)-1,data.residuals()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds)+1,data.residuals()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.7*alp)
         if lines:
             ax.axhline(0,c='black',alpha=0.6)
         m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
-        ax.set(xlim=[-0.1,1.1],ylim=[-m,m],ylabel=r'res (km s$^{-1}$)')#,xlabel='phase')
+        ax.set(xlim=[-0.1,1.1],ylim=[-m,m],ylabel=r'Res (km s$^{-1}$)')#,xlabel='phase')
+
+    elif body == 'residuals_ms':
+        ax.errorbar(phase(data.bjds),data.residuals(),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds),data.residuals(),fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
+        ax.errorbar(phase(data.bjds)-1,data.residuals(),yerr=erbars,fmt=marker,c='grey',alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds)+1,data.residuals(),yerr=erbars,fmt=marker,c='grey',alpha=0.7*alp)
+        if lines:
+            ax.axhline(0,c='black',alpha=0.6)
+        m = max(-min(data.residuals()),max(data.residuals()))*1.1
+        ax.set(xlim=[-0.1,1.1],ylim=[-m,m],ylabel=r'Res (m s$^{-1}$)')#,xlabel='phase')
         
     elif body == 'planet_unphased':
         ax.errorbar(data.bjds,data.rv_curve_orbit(orb),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(data.bjds,data.rv_curve_orbit(orb),fmt='.',c=colour,mfc=fc,label=label)
+        ax.errorbar(data.bjds,data.rv_curve_orbit(orb),fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
         if lines:
-            ax.plot(times,orb.RV_keplerian_add(times),c=colour,alpha=0.7)
+            ax.plot(times,orb.RV_keplerian_add(times),c='grey',alpha=0.7)
         ax.set(ylabel=r'RV m s$^{-1}$',xlabel='Time (days)')
     else:
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_planet(body))
-        ax.errorbar(phase(data.bjds),data.rv_curve_orbit(orb),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7)
-        ax.errorbar(phase(data.bjds),data.rv_curve_orbit(orb),fmt='.',c=colour,mfc=fc,alpha=1.,markersize=7.,label=label)
-        ax.errorbar(phase(data.bjds)-1,data.rv_curve_orbit(orb),yerr=erbars,fmt='.',c='grey',alpha=0.6)
-        ax.errorbar(phase(data.bjds)+1,data.rv_curve_orbit(orb),yerr=erbars,fmt='.',c='grey',alpha=0.6)
+        ax.errorbar(phase(data.bjds),data.rv_curve_orbit(orb),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds),data.rv_curve_orbit(orb),fmt=marker,c=colour,mfc=fc,alpha=alp,markersize=7.,label=label)
+        ax.errorbar(phase(data.bjds)-1,data.rv_curve_orbit(orb),yerr=erbars,fmt=marker,c='grey',alpha=0.6*alp)
+        ax.errorbar(phase(data.bjds)+1,data.rv_curve_orbit(orb),yerr=erbars,fmt=marker,c='grey',alpha=0.6*alp)
         if lines:
-            ax.plot(np.sort(phase(times)),orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='black',alpha=0.6)
-            ax.plot(np.sort(phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='grey',alpha=0.6)
-            ax.plot(np.sort(phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='grey')
+            ax.plot(np.sort(phase(times)),orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='black')
+            ax.plot(np.sort(phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='black',alpha=0.5)
+            ax.plot(np.sort(phase(times))+1,orb.RV_keplerian_add(times)[np.argsort(phase(times))],c='black',alpha=0.5)
         ax.axhline(0,c='grey',ls='--')
         ax.set(xlim=[-0.1,1.1],ylabel=r'RV (m s$^{-1}$)')
         
@@ -190,7 +203,23 @@ def plot_rv_phase_binned(ax,phase,rvdata,rverrs,numbins=10,mark='8',colour='blac
         errs.append(np.std(rvdata[ind])/np.sqrt(sum(ind)))
         # errs.append(np.mean(rverrs[ind]))
     ax.errorbar(xax,points,xerr=xerrs,yerr=errs,fmt=mark,c=colour,mfc='none',markersize=10.,markeredgewidth=1.3)
-                                 
+
+def plot_observation_coverage(ax,orbit,obsrange,colour='purple',alpha=0.4):
+
+    fut = np.arange(obsrange[0],obsrange[1],0.001)
+    trange = obsrange[1]-obsrange[0]
+
+    a1 = orbit.phase(fut)[np.logical_and(orbit.phase(fut)<1.0,orbit.phase(fut)>orbit.phase(fut[0]))]
+    a2 = orbit.phase(fut)[np.logical_and(orbit.phase(fut)>0,orbit.phase(fut)<orbit.phase(fut[-1]))]
+    fut2 = fut[np.logical_and(orbit.phase(fut)>0,orbit.phase(fut)<orbit.phase(fut[-1]))]
+    # ax.plot(np.sort(orbit.phase(fut)),orbit.RV_keplerian_add(fut)[np.argsort(orbit.phase(fut))],c='purple',alpha=0.4,linewidth=12)
+    if orbit.P > trange:
+        ax.plot(a1,orbit.RV_keplerian_add(fut)[np.argsort(a1)],c=colour,alpha=alpha,linewidth=12)
+        ax.plot(a2,orbit.RV_keplerian_add(fut2),c=colour,alpha=alpha,linewidth=12)
+    else:
+        xax2 = np.arange(0,1,0.01)   
+        ax.plot(xax2,orbit.RV_keplerian_add(xax2,phase=True),c='purple',alpha=0.4,linewidth=12)
+    
 
 def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys',detlim_col='purple',numbins=50,lowlim=-1,uplim=None,label='',perc=99,m_unit='Earth'):
     '''
@@ -234,7 +263,7 @@ def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys'
         ax.hexbin(posterior_file['P'],posterior_file[KM]*mult,xscale='log',bins='log',yscale='log', cmap=colourmap,alpha=0.65, gridsize=numbins, lw=0, mincnt=1,extent=(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),lowlim,uplim))
     
         if KM == 'K':
-            Masses, names = [80*Mj/Msun,13*Mj/Msun,Mj/Msun,Msat/Msun,Mn/Msun,2*Me/Msun,Me/Msun],['Stellar_limit','Brown-dwarf limit','Jupiter','Saturn','Neptune','2xEarth','Earth']
+            Masses, names = [80*Mj/Msun,13*Mj/Msun,Mj/Msun,Msat/Msun,Mn/Msun,2*Me/Msun,Me/Msun],['80xJupiter','13xJupiter','Jupiter','Saturn','Neptune','2xEarth','Earth']
             for i, mass in enumerate(Masses):
                 plot_planet_line(ax,M_central,mass,xax,text=names[i])
             
@@ -282,10 +311,11 @@ def plot_planet_line(ax,M0,Mp,xax,text='',colour='black',M0p=None,M0m=None):
         M0p,M0m: plus and minus on the central mass, to give shaded region (M_sun)
     '''
     
-    ax.plot(xax, fcs.semi_amplitude(M0, Mp, xax, 0),ls='--',c=colour)
+    line = ax.plot(xax, fcs.semi_amplitude(M0, Mp, xax, 0),ls='--',c=colour)[0]
     if M0p != None:
         ax.fill_between(xax,fcs.semi_amplitude(M0+M0m, Mp, xax, 0),fcs.semi_amplitude(M0+M0p, Mp, xax, 0), facecolor=colour,alpha = 0.3)
-    ax.annotate(text,(xax[-1], fcs.semi_amplitude(M0, Mp, xax[-1], 0)),textcoords="offset points",xytext=(-10,10),ha='right')
+    label_line(line,text,xax[-1], fcs.semi_amplitude(M0, Mp, xax[-1], 0),ax)
+    # ax.annotate(text,(xax[-1], fcs.semi_amplitude(M0, Mp, xax[-1], 0)),textcoords="offset points",xytext=(-10,15),ha='right')
 
 def plot_detlim_lines(ax,loc,KM='K'):
     
@@ -300,6 +330,49 @@ def plot_detlim_lines(ax,loc,KM='K'):
     xax, detlim, pbins, hvals = mplt.make_detection_limit(posteriors_single,20,KM=KM)
     
     ax.plot(xax,detlim,label=loc)
+
+def label_line(line, label, x, y, ax, alpha=1, color='black', size=16):
+    """Add a label to a line, at the proper angle.
+
+    Arguments
+    ---------
+    line : matplotlib.lines.Line2D object,
+    label : str
+    x : float
+        x-position to place center of text (in data coordinated
+    y : float
+        y-position to place center of text (in data coordinates)
+    color : str
+    size : float
+    https://stackoverflow.com/questions/18780198/how-to-rotate-matplotlib-annotation-to-match-a-line
+    https://gist.github.com/lzkelley/0de9e8bf2a4fe96d2018f1b1bd5a0d3c
+    """
+    xdata, ydata = line.get_data()
+    x1 = xdata[0]
+    x2 = xdata[-1]
+    y1 = ydata[0]
+    y2 = ydata[-1]
+    # print('x1,x2,y1,y2',x1,x2,y1,y2)
+
+    text = ax.annotate(f"${label}$", xy=(x, y), xytext=(-80, 8),
+                       textcoords='offset points',
+                       size=size, color=color,
+                       horizontalalignment='left',
+                       verticalalignment='bottom',
+                       alpha = alpha,
+                       path_effects=[pe.withStroke(linewidth=0.5, foreground="k")])
+
+    sp1 = ax.transData.transform_point((x1, y1))
+    sp2 = ax.transData.transform_point((x2, y2))
+    # print('sp1,sp2',sp1,sp2)
+    rise = (sp2[1] - sp1[1])
+    run = (sp2[0] - sp1[0])
+    # print('rise,run',rise,run)
+
+    slope_degrees = np.degrees(np.arctan2(rise, run)/2.3)
+    # print('slope',slope_degrees)
+    text.set_rotation(slope_degrees)
+    return text
     
 def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlims=True,detlimcol='purple',scattercol='cornflowerblue',outcol='grey',tides=False,uplim=1000,lowlim=10):
     

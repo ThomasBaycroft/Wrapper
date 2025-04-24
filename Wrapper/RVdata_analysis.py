@@ -96,7 +96,7 @@ class RV_planets:
         scaling=1.0
         if units == 'kms':
             scaling=1000
-        print(self.inst_name,float(offset),float(offset)*scaling,self.vrad[0])
+        # print(self.inst_name,float(offset),float(offset)*scaling,self.vrad[0])
         self.vrad -= float(offset)*scaling
         self.num_params+=1
         

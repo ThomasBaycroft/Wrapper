@@ -19,6 +19,7 @@ import math
 # import random
 
 colours = ['r','b','g','m','c','darkviolet','orange']
+colours = ['indianred','cornflowerblue','g','m','c','darkviolet','orange']
 
 class model_divergence:
     

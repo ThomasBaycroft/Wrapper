@@ -33,7 +33,7 @@ from . import make_datasheets as md
 
 time0 = time.time()
 
-def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,Yaz_M2=False,M2=0.3,M2_err=0.01,M2_posts=[],phiw=False):
+def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,Yaz_M2=False,M2=0.3,M2_err=0.01,M2_posts=[],phiw=False,Daniel_K2=False,K2=[10,0.1],inc=np.pi/2,inc_err=0):
     #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
     with open(loc+'posterior_sample.txt') as f:
         names = f.readline().split()[1:]
@@ -72,7 +72,7 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,
     try:
         posterior_file = pd.read_csv(loc+'posterior_file.csv')
     except FileNotFoundError:
-        posterior_file= pfa.add_columns_RV(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err,Yaz_M2=Yaz_M2,M2=M2,M2_err=M2_err,M2_posts=M2_posts,phiw=phiw)
+        posterior_file= pfa.add_columns_RV(posterior_file, epoch, binary, Precession, SB2, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err,Yaz_M2=Yaz_M2,M2=M2,M2_err=M2_err,M2_posts=M2_posts,phiw=phiw,Daniel_K2=Daniel_K2,K2=K2,inc=inc,inc_err=inc_err)
         # a,b=[],[]
         # for i in range(len(posterior_file)):
         #     x,y = op.transit_pred(posterior_file[['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']].values[i], posterior_file[['M_pl_0','P0','ecc0','Tper0','w0']].values[i], 2458800,epoch)
@@ -113,39 +113,58 @@ def Samples_BFs(loc,maxNp):
     return BFs
 
 def FIP_TIP(loc,maxNp,P_prior,dataspan):
+    '''
+    Calculates the False Inclusion Periodogram (FIP Hara et al. 2021) from a kima run. Function takes:
+        loc: str, path to the directory with the kima samples and posterior samples
+        maxNp: int, maximum number of keplerians included in the model
+        P_prior: list/array with two values, lower bound and upper bound for the prior used on the orbital period
+        dataspan: int, timespan covered by the data in days
+    Returns:
+        pers: array, period bins used
+        fiper_posts: array, FIP values for each period calculated from the posterior samples
+        fiper_samps: array, FIP values for each period calculated from the samples
+    '''
     
     Pmin, Pmax = P_prior[0], P_prior[1]
     # print(Pmin,Pmax)
     
+    #Obtain the Likelihoods and weights for the samples from the kima output files
     Likes_samps = np.array(pd.read_csv(loc+'sample_info.txt',header=None,skiprows=[0],sep='\s+',engine='python',usecols=[1]))
     weights = pd.read_csv(loc+'weights.txt',header=None)
     
+    #list of names for columns with the various planets in 
     cols = []
     for i in range(maxNp):
         cols.append('P'+str(i))
         
+    #read the period columns from the samples and the posterior samples
     with open(loc+'sample.txt') as f:
         names = f.readline()[1:].split()
     P_samps = np.array(pd.read_csv(loc+'sample.txt',header=None,skiprows=[0],names=names,sep='\s+',engine='python',usecols=cols))
     P_posts = np.array(pd.read_csv(loc+'posterior_sample.txt',skiprows=[0,1],names=names,sep='\s+',engine='python',usecols=cols))
     
+    #calculate and normalise the probabilities for each sample/posterior sample
     logL = Likes_samps - np.max(Likes_samps)
     prob_samps = np.exp(logL)*weights
     prob_samps = prob_samps/np.sum(prob_samps)
     prob_posts = np.ones(len(P_posts))/len(P_posts)
     
+    #convert the periods to frequencies
     omegas_samps = 2*np.pi/P_samps
     omegas_posts = 2*np.pi/P_posts
     
-    omegas = np.flip(np.linspace(2*np.pi/Pmax,2*np.pi/Pmin,10000))#can change nuumber of points
-    
+    freq_int = 2*np.pi/dataspan*1 #frequency resolution
+
+    #define grid of frequencies (The top one is the one I have used mostly, but the bottom is what is recommended in the paper)
+    # omegas = np.flip(np.linspace(2*np.pi/Pmax,2*np.pi/Pmin,10000))
+    omegas = np.flip(np.linspace(2*np.pi/Pmax,2*np.pi/Pmin,int(5/freq_int)))
+
     nom = len(omegas)
 
     tiper_samps = np.zeros(nom)
     tiper_posts = np.zeros(nom)
     
-    freq_int = 2*np.pi/dataspan*1 #frequency resolution
-    
+    #calculate the True Inclusion Probabilities (TIP)
     for i in range(nom):
         #lower and upper bound
         bm = np.max([omegas[i] - freq_int/2,0])
@@ -160,6 +179,7 @@ def FIP_TIP(loc,maxNp,P_prior,dataspan):
         tiper_samps[i] = np.sum(prob_samps[trutharr_samps]) #TIP-periodogram
         tiper_posts[i] = np.sum(prob_posts[trutharr_posts]) #TIP-periodogram
     
+    #FIP is 1-TIP
     fiper_samps = 1-tiper_samps
     fiper_posts = 1-tiper_posts
     pers = 2*np.pi/omegas
@@ -280,6 +300,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']
     #for posterior file restricted to numpl
     posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
+    posteriors_single = posteriors_single[posteriors_single['P']>0.0]
     #for the full posterior file (excluding not found planets)
     full_posteriors = pfa.combine_planets(posterior_file,maxNp,maxNp,columns_of_planetary_interest)
     full_posteriors = full_posteriors[full_posteriors['P']>0.0]

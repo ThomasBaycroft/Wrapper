@@ -26,7 +26,7 @@ Mj = cst.M_jup.value
 def semi_major_axis(M_tot,P):
     return ((P*24*3600)**2*G*(M_tot)*Ms/(4*np.pi**2))**(1/3)/AU
 
-def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-',bords=False):
+def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,SB2=False,timeseries=[],tpers=[0,0,0],alpha=1,text=True,cs=['r','b','g','m','c','darkviolet','orange'],ls='-',bords=False,HWstab=0,size=50):
     '''
     Plot orbits on a polar plot, showing where each RV datapoint has been sampled coloured by time, takes:
         Masses: list, Mass of each body (Msun)
@@ -63,6 +63,8 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
         rs.append(r)
     for i in range(start,len(smas)):   
         r = rs[i]
+        while i>len(cs)-1:
+            cs.append('black')
         ax.plot(theta, r,alpha=alpha,c=cs[i],ls=ls)
         if bords:
             rM = np.ones(len(r))*max(r)
@@ -75,9 +77,11 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
             nus = fcs.true_anomaly(Es, eccs[i])
             theta_points = nus + omegas[i] - np.pi/2
             r_points = smas[i]*(1-eccs[i]**2)/(1+eccs[i]*np.cos(nus))
-            c = ax.scatter(theta_points,r_points,c=timeseries,cmap='cool',alpha=alpha)
-            if i == 0:
+            c = ax.scatter(theta_points,r_points,c=timeseries,cmap='cool',alpha=alpha,s=size)
+            if i == start:
                 fig.colorbar(c, label='bjd')
+    if circumbinary:
+        ax.plot(np.linspace(0,2*np.pi,100),np.ones(100)*float(HWstab),ls='--',c='grey')
             
 
     ax.set_rmin(0)
