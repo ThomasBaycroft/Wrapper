@@ -8,6 +8,7 @@ Created on Sat Jan  7 20:08:32 2023
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
+import matplotlib
 import numpy as np
 from . import functions as fcs
 from . import run_analysis as ra
@@ -259,6 +260,7 @@ def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys'
         uplim = np.log10(max(posterior_file[KM]))
     ax.plot(bincentres,KM99s*mult,c=detlim_col,label=label)
     xax = np.array([min(posterior_file['P']),max(posterior_file['P'])])
+    
     if colourmap!=None:
         ax.hexbin(posterior_file['P'],posterior_file[KM]*mult,xscale='log',bins='log',yscale='log', cmap=colourmap,alpha=0.65, gridsize=numbins, lw=0, mincnt=1,extent=(np.log10(min(posterior_file['P'])),np.log10(max(posterior_file['P'])),lowlim,uplim))
     
@@ -314,6 +316,8 @@ def plot_planet_line(ax,M0,Mp,xax,text='',colour='black',M0p=None,M0m=None):
     line = ax.plot(xax, fcs.semi_amplitude(M0, Mp, xax, 0),ls='--',c=colour)[0]
     if M0p != None:
         ax.fill_between(xax,fcs.semi_amplitude(M0+M0m, Mp, xax, 0),fcs.semi_amplitude(M0+M0p, Mp, xax, 0), facecolor=colour,alpha = 0.3)
+    # manager = plt.get_current_fig_manager()
+    # manager.window.showMaximized()
     label_line(line,text,xax[-1], fcs.semi_amplitude(M0, Mp, xax[-1], 0),ax)
     # ax.annotate(text,(xax[-1], fcs.semi_amplitude(M0, Mp, xax[-1], 0)),textcoords="offset points",xytext=(-10,15),ha='right')
 
@@ -354,10 +358,10 @@ def label_line(line, label, x, y, ax, alpha=1, color='black', size=16):
     y2 = ydata[-1]
     # print('x1,x2,y1,y2',x1,x2,y1,y2)
 
-    text = ax.annotate(f"${label}$", xy=(x, y), xytext=(-80, 8),
+    text = ax.annotate(f"${label}$", xy=(x, y), xytext=(0, 0),
                        textcoords='offset points',
                        size=size, color=color,
-                       horizontalalignment='left',
+                       horizontalalignment='right',
                        verticalalignment='bottom',
                        alpha = alpha,
                        path_effects=[pe.withStroke(linewidth=0.5, foreground="k")])
@@ -369,7 +373,7 @@ def label_line(line, label, x, y, ax, alpha=1, color='black', size=16):
     run = (sp2[0] - sp1[0])
     # print('rise,run',rise,run)
 
-    slope_degrees = np.degrees(np.arctan2(rise, run)/2.3)
+    slope_degrees = np.degrees(np.arctan2(rise, run))
     # print('slope',slope_degrees)
     text.set_rotation(slope_degrees)
     return text
@@ -496,7 +500,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     # print(np.percentile(posteriors.KO_wdot0[inds],90))
     done = 0
     for j,i in enumerate(inds):
-        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
+        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0.43,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
         # print(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i])
         # print(posteriors['KO_wdot0'][i],P[j],M*Ms/Mj)
         # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
@@ -513,7 +517,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
                 if done >0:
                     plt.scatter(P[j],M*Msun/Mj,c=scattercol,s=8,alpha=0.2)
                 else:
-                    plt.scatter(P[j],M*Msun/Mj,c=scattercol,s=8,alpha=0.2,label=r'Planet ($\dot{\omega}$)')
+                    plt.scatter(P[j],M*Msun/Mj,c=scattercol,s=8,alpha=0.2,label=r'Possible companions ($\dot{\omega}$)')
                     done = 1
                 # P_under.append(P[i])
             else:

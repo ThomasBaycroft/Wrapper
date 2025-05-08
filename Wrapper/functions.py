@@ -311,7 +311,7 @@ def masses(SB2,K,P,e,M1=1,q=1,sini=1):
         M1 = (mass_func*(1+q)**2)/Msun/(sini**3)
         M2 = M1*q
     else:
-        M2 = get_mass(K,M1,P,e)/sini
+        M2 = np.array(get_mass(K,M1,P,e))/sini
             
     return M1,M2
 
@@ -1221,6 +1221,18 @@ def Campbell(A,B,F,G):
         inc[i] = Campbell_i(A[i], B[i], F[i], G[i], w[i], W[i])
     
     return a,w,W,inc
+
+def sma_AST(P,M0,M1,plx):
+    '''
+    Calculate semimajor axis of an astrometric orbit given:
+        P: orbital period (days)
+        M0: Stellar mass (Msun)
+        M1: Planet mass (Msun)
+        plx: parallax (mas)
+    returns:
+        a: semi-major-axis (mas)
+    '''
+    return plx*(P/365.25)**(2/3)*(M0+M1)**(1/3)*(M1/(M0+M1))
 
 def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
     '''
