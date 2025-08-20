@@ -475,6 +475,16 @@ def f_dash_M(K, M0, M1, P, ecc):
     
     return f_dash_1 - f_dash_2
 
+def Trans_Prob(R0,R1,a,e,w):
+
+    return (R0+R1)*Rsun/(a*AU)*(1+e*np.sin(w))/(1-e**2)
+
+def Transitability_prob(a_star,a_pl,R_star,DeltaI):
+    '''
+    Martin and Triaud (2015)
+    '''
+    return np.sin(DeltaI + (a_star*np.sin(DeltaI) + R_star)/(a_pl + a_star*np.cos(DeltaI)))
+
 #################################################
 #Orbital element functions
 #################################################
@@ -569,8 +579,21 @@ def W_xyz(x,y,z,dx,dy,dz):
     return Omega
 
 def I_mut(I1,I2,W1,W2):
-    cosI = np.cos(I1)*np.cos(I2) - np.sin(I1)*np.sin(I2)*np.cos(W1-W2)
+    cosI = np.cos(I1)*np.cos(I2) + np.sin(I1)*np.sin(I2)*np.cos(W1-W2)
     return np.arccos(cosI)
+
+def orbit_r(a,e,nu):
+    return a*(1-e**2)/(1+e*np.cos(nu))
+
+def orbit_nu_from_r(a,e,r):
+    cosnu = (1 - a*(1-e**2)/r)/e
+    if cosnu < 0:
+        possible = False
+        nu = 0
+    else:
+        possible = True
+        nu = np.arccos(cosnu)
+    return possible, nu
 
 
 #################################################
@@ -1054,6 +1077,7 @@ def tpri(tsec,e,w,P):
 
 def wdot_tpri_diff(w0,wdot,time,P,e):
     '''
+    Formulation from Hilditch (page 238)
     Calculate change in offset between primary and secondary eclipses due to apsidal precession of the binary given:
         w0: initial w (rad)
         wdot: precession rate (arcsec/yr)
@@ -1074,6 +1098,12 @@ def t_offset(P,e,w):
     Offset between primary and secondary eclipse times, to first order in e
     '''
     return P/2*(1 + 4*e*np.cos(w)/np.pi)
+
+def Tocc(Ttra,e,w):
+    return Ttra*(1+e*np.sin(w))/(1-e*np.sin(w))
+
+def Ttra(Tocc,e,w):
+    return Ttra*(1-e*np.sin(w))/(1+e*np.sin(w))
 
 def delt_wdot(P,e,w0,wdot,time):
     '''
@@ -1499,7 +1529,7 @@ def onetwopunch_period(P,ebin,Tecl1,Tecl2,T1,T2,w1,w2,M0,M1,epl=0,wpl=0):
 
 def T_stab(M0,M1,a1,a2,e2,P2):
     '''
-    Calculate stability timescale analystically following Zhang, Naoz and Will 2023
+    Calculate stability timescale analytically following Zhang, Naoz and Will 2023
     Assumes binary has circular orbit, and massless planet
     Units of M0 and M1 should be the same, as with a1 and a2
     returns stability timescale in the units of P2
@@ -1518,6 +1548,9 @@ def get_Tstab(M0,M1,P1,P2,e2):
     return T_stab(M0,M1,a1,a2,e2,P2)
 
 def AaM_stab(M0,M1,m2,a1,e2):
+    '''
+    Aarseth and Mardling?
+    '''
     q=m2/(M0+M1)
     C = 2.8
     return C*((1+q)*(1+e2)/(1-e2)**(0.5))**(2/5)*a1
@@ -1560,6 +1593,122 @@ def get_HW_stab(M0,M1,P,e,ext=True,param='P'):
         ret = a_pl
     
     return ret
+
+def get_HW_stab_sma(M0,M1,a,e,ext=True,param='P'):
+    '''
+    Circumbinary stability criterion (Holman & Wiegert 1999)
+        M0: primary mass (Msun)
+        M1: Secondary mass (Msun)
+        a: semi-major axis (AU)
+        e: eccentricity
+    returns:
+        a: Period/semi major axis of stability limit (days/AU)
+    '''
+    
+    mu = np.minimum(M1/(M0+M1),M0/(M0+M1))
+    if ext:
+        a_pl = HW_stab_lim_ext(a, e, mu)*a
+    else:
+        a_pl = HW_stab_lim(a, e)*a
+    
+    P_pl = P_from_sma(a_pl, M0+M1)
+    if param=='P':
+        ret = P_pl
+    else:
+        ret = a_pl
+    
+    return ret
+
+def NG_acrit_out_vals(m1,m2,mp,eb,ep,Im,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Mb = m2/(m1+m2)
+    Mp = mp/(m1+m2)
+    Mlb = np.log10(Mb)
+
+    Xi = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Mlb*eb,Mlb*ep,Im*eb,Mlb*eb**2,Mlb*ep**2,Im**2*eb,Mlb**3])
+    Xo = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Im*eb,Im*ep,Im**2*eb,Mlb**3,Im**3,eb**3,ep**3])
+
+    acro,acroP,acroM = NG_stab_acrit_outer(Xo,ab)
+
+    return acro
+
+def NG_acrit_in_vals(m1,m2,mp,eb,ep,Im,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Mb = m2/(m1+m2)
+    Mp = mp/(m1+m2)
+    Mlb = np.log10(Mb)
+
+    Xi = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Mlb*eb,Mlb*ep,Im*eb,Mlb*eb**2,Mlb*ep**2,Im**2*eb,Mlb**3])
+    Xo = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Im*eb,Im*ep,Im**2*eb,Mlb**3,Im**3,eb**3,ep**3])
+
+    acri,acriP,acriM = NG_stab_acrit_inner(Xi,ab)
+
+    return acri
+
+def NG_acrits_vals(m1,m2,mp,eb,ep,Im,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Mb = m2/(m1+m2)
+    Mp = mp/(m1+m2)
+    Mlb = np.log10(Mb)
+
+    Xi = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Mlb*eb,Mlb*ep,Im*eb,Mlb*eb**2,Mlb*ep**2,Im**2*eb,Mlb**3])
+    Xo = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Im*eb,Im*ep,Im**2*eb,Mlb**3,Im**3,eb**3,ep**3])
+
+    acri,acriP,acriM = NG_stab_acrit_inner(Xi,ab)
+
+    acro,acroP,acroM = NG_stab_acrit_outer(Xo,ab)
+
+    return acri,acro
+
+def NG_acrits(m1,m2,mp,eb,ep,Im,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Mb = m2/(m1+m2)
+    Mp = mp/(m1+m2)
+    Mlb = np.log10(Mb)
+
+    Xi = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Mlb*eb,Mlb*ep,Im*eb,Mlb*eb**2,Mlb*ep**2,Im**2*eb,Mlb**3])
+    Xo = np.array([1,Mlb,Im,eb,ep,Mlb**2,Im**2,eb**2,ep**2,Im*eb,Im*ep,Im**2*eb,Mlb**3,Im**3,eb**3,ep**3])
+
+    acri,acriP,acriM = NG_stab_acrit_inner(Xi,ab)
+
+    acro,acroP,acroM = NG_stab_acrit_outer(Xo,ab)
+
+    return (acri,acriP,acriM),(acro,acroP,acroM)
+
+def NG_stab_acrit_inner(Xi,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Bi = np.array([0.20729, -0.32875, 0.10339, 0.58433, 0.36623, -0.25569,-0.06425, -0.38387, 1.01951, 0.26910, 0.38912, -0.19863, -0.25361, -0.30333, 0.09080, -0.05955])
+    Ci = np.array([0.003763, 0.01015, 0.00224, 0.00922, 0.00978, 0.00982, 0.00069, 0.00947, 0.01176, 0.00687, 0.00759, 0.00420, 0.00735, 0.00913, 0.00129, 0.00280])
+
+    Yi = np.dot(Bi,Xi)
+    YiP = np.dot(Bi+Ci,Xi)
+    YiM = np.dot(Bi-Ci,Xi)
+
+    return ab*10**Yi,ab*10**YiP - ab*10**Yi,ab*10**Yi - ab*10**YiM
+
+
+def NG_stab_acrit_outer(Xo,ab):
+    '''
+    Circumbinary critical semi-major axes from Georgakarakos 2024
+    '''
+    Bo = np.array([0.23612, -0.29377, 0.22710, 1.06753, 0.62109, -0.21512, -0.06648, -1.52936, -0.4748, -0.31329, -0.00869, 0.11846, -0.03932, -0.00933, 0.87506, 1.25895])
+    Co = np.array([0.00317, 0.00927, 0.00313, 0.00905, 0.00975, 0.00910, 0.00202, 0.02330, 0.02893, 0.00389, 0.00116, 0.00119, 0.00260, 0.00041, 0.01699, 0.02373])
+
+    Yo = np.dot(Bo,Xo)
+    YoP = np.dot(Bo+Co,Xo)
+    YoM = np.dot(Bo-Co,Xo)
+
+    return ab*10**Yo,ab*10**YoP - ab*10**Yo,ab*10**Yo - ab*10**YoM
 
 ######################################
 #Lombe-Scargle

@@ -82,7 +82,7 @@ def plot_rv_curves(pri_data_list,sec_data_list=[],colours=['b','r','g','m','purp
     
     return fig, ax
 
-def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='grey',inflate_errors=False,bin_phase=False,marker='.',true_anom=False,label='',alpha=1):
+def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='grey',inflate_errors=False,bin_phase=False,sub=2400000,marker='.',true_anom=False,label='',alpha=1):
     '''
     plots a single RV curve on an axis given:
         ax: the ax object on which to plot
@@ -132,7 +132,6 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
         ax.axhline(0,c='grey',ls='--')
         ax.set(xlim=[-0.1,1.1],ylabel=r'RV (km s$^{-1}$)')
     elif body == 'binary_unphased':
-        sub = 2400000
         ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
         ax.errorbar(data.bjds-sub,data.rv_curve_binary()/1000,fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
         if lines:
@@ -140,7 +139,6 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
             ax.plot(times-sub,orb.RV_keplerian_add(times)/1000,c=colour,alpha=0.7)
         ax.set(ylabel=r'RV km s$^{-1}$')
     elif body == 'residuals_unphased':
-        sub = 2400000
         ax.errorbar(data.bjds-sub,data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
         ax.errorbar(data.bjds-sub,data.residuals()/1000,fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
         if lines:
@@ -254,11 +252,15 @@ def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys'
     if label=='':
         label = '99% confidence detection limit'
     
-    bincentres, KM99s, p_bins, histvals = make_detection_limit(posterior_file,numbins,KM=KM,lowlim=lowlim,perc=perc)
+    bincentres, KM99s, p_bins, histvals, errs = make_detection_limit(posterior_file,numbins,KM=KM,lowlim=lowlim,perc=perc)
     
     if uplim == None:
         uplim = np.log10(max(posterior_file[KM]))
     ax.plot(bincentres,KM99s*mult,c=detlim_col,label=label)
+    if KM == 'K':
+        detlim_high = KM99s*mult + KM99s*mult*errs
+        detlim_low  = KM99s*mult - KM99s*mult*errs
+        ax.fill_between(bincentres,detlim_high,detlim_low,fc=detlim_col,alpha=0.6)
     xax = np.array([min(posterior_file['P']),max(posterior_file['P'])])
     
     if colourmap!=None:
@@ -289,6 +291,7 @@ def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1,p_prior=[],perc
     p_bins = np.histogram(posterior_file['P'],bins=bins)[1]
     histvals = np.histogram(posterior_file['P'],bins=bins)[0]
     KM99s=[]
+    K_uncs = []
     bincentres=[]
     for i in range(numbins):
         KMs = posterior_file[np.logical_and(posterior_file['P']>=p_bins[i],posterior_file['P']<p_bins[i+1])][KM]
@@ -296,10 +299,12 @@ def make_detection_limit(posterior_file,numbins,KM='K',lowlim=-1,p_prior=[],perc
             KMs=[10**lowlim]
         KM99s.append(np.percentile(KMs,perc))
         bincentres.append(10**((np.log10(p_bins[i])+np.log10(p_bins[i+1]))/2))
+        K_uncs.append(1.97/np.sqrt(len(KMs)))
+        # K_uncs.append(15.1/np.sqrt(len(posterior_file)))
         
     # df = pd.DataFrame(np.array([bincentres,KM99s]).T,columns=['P','Detlim_'+KM])
     # df.to_csv('Detection_limit_'+KM+'.csv',index=False)
-    return bincentres, np.array(KM99s), p_bins, histvals
+    return bincentres, np.array(KM99s), p_bins, histvals, np.array(K_uncs)
 
 def plot_planet_line(ax,M0,Mp,xax,text='',colour='black',M0p=None,M0m=None):
     '''
@@ -331,7 +336,7 @@ def plot_detlim_lines(ax,loc,KM='K'):
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
     
-    xax, detlim, pbins, hvals = mplt.make_detection_limit(posteriors_single,20,KM=KM)
+    xax, detlim, pbins, hvals, errs = mplt.make_detection_limit(posteriors_single,20,KM=KM)
     
     ax.plot(xax,detlim,label=loc)
 
@@ -399,7 +404,7 @@ def plot_wdot_planets_loc(ax,loc,detlimloc, number,detlims=True,detlimcol='purpl
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, numpl, columns_of_planetary_interest)
     numbins=50
-    xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
+    xax, detlim,p_bins, hvals, errs = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
     maxNp, numpl, nKOs, Bayes_factors, Nps, BFsamps = ra.calc_nump_variables(posterior_file)
@@ -482,7 +487,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_']
     detlim_ps = pfa.combine_planets(detlim_posteriors, maxNp, max(numpl,1), columns_of_planetary_interest)
     numbins=numbins
-    xax, detlim,p_bins, hvals = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
+    xax, detlim,p_bins, hvals, errs = mplt.make_detection_limit(detlim_ps,numbins,KM='M')
     
     posteriors = posts[posts.KO_wdot0>=0]
 
@@ -500,7 +505,7 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
     # print(np.percentile(posteriors.KO_wdot0[inds],90))
     done = 0
     for j,i in enumerate(inds):
-        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0.43,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
+        M = fcs.planet_mass(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0.,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i],0,posteriors['KO_wdot0'][i])
         # print(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i])
         # print(posteriors['KO_wdot0'][i],P[j],M*Ms/Mj)
         # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
@@ -559,6 +564,78 @@ def plot_wdot_planets_file(ax,posts,detlimloc, number,detlimcol='purple',scatter
             P_stabs.append(P_stab)
     plt.axvline(np.median(P_stabs),c=stabcol,ls='--') #label='stability limit'
     plt.fill_betweenx([0.001,1000],[np.median(P_stabs)],fc='orange',alpha=0.4,label='unstable region')
+    plt.legend()    
+    
+
+def plot_wdot_planets_values(ax,wdots,M_pris,M_secs,ecc,Ps,w0s,number,scattercol='cornflowerblue',outcol='grey',stabcol='r',numbins=50,Puplim=1000,Plowlim=10,logPs=True):
+    
+        
+    # number = len(posteriors)
+    if logPs:
+        P = 10**(np.random.rand(number)*(np.log10(Puplim)-np.log10(Plowlim)) + np.log10(Plowlim))
+    else:
+        P = np.random.rand(number)*(Puplim-Plowlim) + Plowlim
+    inds = random.sample(list(np.arange(0,len(wdots),1)),number)
+    # print(inds)
+    # print(posteriors)
+    fails=[]
+    P_stabs=[]
+    # print(np.percentile(posteriors.KO_wdot0[inds],90))
+    done = 0
+    for j,i in enumerate(inds):
+        M = fcs.planet_mass(M_pris[i],M_secs[i],ecc[i],0.,Ps[i],P[j],w0s[i],0,wdots[i])
+        # print(posteriors['M_pri'][i],posteriors['M_sec'][i],posteriors['KO_ecc0'][i],0,posteriors['KO_P0'][i],P[j],posteriors['KO_w0'][i])
+        # print(posteriors['KO_wdot0'][i],P[j],M*Ms/Mj)
+        # M = fcs.planet_mass(np.array(posteriors['M_pri'])[i],np.array(posteriors['M_sec'])[i],np.array(posteriors['KO_ecc0'])[i],0,np.array(posteriors['KO_P0'])[i],P[j],np.array(posteriors['KO_w0'])[i],0,wdot[i])
+        # plt.scatter(P[i],M*Ms/Mj,c='cornflowerblue',s=8,alpha=0.04)
+        try:
+            P_stab=fcs.get_HW_stab(M_pris[i],M_secs[i],Ps[i],ecc[i],ext=True)
+            P_stabs.append(P_stab)
+            Mdl = 0
+            if M<Mdl and P[j] > P_stab:
+                # M_under.append(M*Ms/Mj)
+                if done >0:
+                    plt.scatter(P[j],M*Msun/Mj,c=scattercol,s=8,alpha=0.2)
+                else:
+                    plt.scatter(P[j],M*Msun/Mj,c=scattercol,s=8,alpha=0.2,label=r'Possible companions ($\dot{\omega}$)')
+                    done = 1
+                # P_under.append(P[i])
+            else:
+                if outcol=='grey':
+                    al=0.1
+                else:
+                    al=0.2
+                plt.scatter(P[j],M*Msun/Mj,c=outcol,s=8,alpha=al)
+        except ValueError:
+            fails.append(P[j])
+    print(len(fails),'errors recorded')  
+    # bincen, perc = get_percentile(np.array(P_under),np.array(M_under),bins=np.linspace(min(P_under),max(P_under),20),percentile=99,log=False)
+    # plt.plot(bincen,perc)
+    # sns.kdeplot(P_under,M_under,levels=[0.64,0.95],log_scale=(False,False),color='indianred')
+    plt.xlabel('Period (days)')
+    plt.ylabel(r'Mass (M$_J$)')
+    # plt.ylim([0.1,1000])
+    plt.semilogy()
+    # xax = np.linspace(40,840,60)
+    # Mbin = np.ones(len(xax))*(2.151+1.992)
+    # es = np.ones(len(xax))*0.2419
+    # Ks = np.ones(len(xax))*5000
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='b',label='5 km/s')
+    # Ks = np.ones(len(xax))*1000
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='r',label='1 km/s')
+    # Ks = np.ones(len(xax))*400
+    # ms = np.array(fcs.get_mass(Ks,Mbin,xax,es))*Ms/Mj
+    # plt.plot(xax,ms,c='g',label='400 m/s')
+    # plt.axhline(80,ls='--',c='grey')
+    # plt.axhline(13,ls='--',c='grey')
+    if len(P_stabs)==0:
+        for i in range(1000):
+            P_stab=fcs.get_HW_stab(posts['M_pri'][i],posts['M_sec'][i],posts['KO_P0'][i],posts['KO_ecc0'][i],ext=True)
+            P_stabs.append(P_stab)
+    plt.axvline(np.median(P_stabs),c=stabcol,ls='--') #label='stability limit'
+    plt.fill_betweenx([0.001,10000],[np.median(P_stabs)],fc='orange',alpha=0.4,label='unstable region')
     plt.legend()    
     
     
