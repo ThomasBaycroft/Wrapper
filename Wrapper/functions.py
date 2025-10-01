@@ -20,10 +20,11 @@ Rsun = constants.R_sun.value
 Msun = constants.M_sun.value
 Mj = constants.M_jup.value
 Me = constants.M_earth.value
-Re = constants.R_earth.value
-Rj = constants.R_jup.value
 Mnep = 1.0241*10**(26)
 Msat = 5.68319*10**(26)
+Re = constants.R_earth.value
+Rj = constants.R_jup.value
+
 
 #################################################
 #Radial Velocity functions
@@ -188,7 +189,7 @@ def keplerian_plus(time, p, k, ecc, omega, omdot, t0, vsys):
             M = 2.*pi * (time-t0[i]) / p[i]
             E = ecc_anomaly(M, ecc[i])
             nu = true_anomaly(E, ecc[i])
-            wdot = omdot[i]*(4.8481*(0.000001)/365.25) #convert from arcsec per year to radians per day
+            wdot = omdot[i]*(np.pi/3600/180/365.25) #convert from arcsec per year to radians per day
             w = omega[i]+wdot*(time-t0[i])
             vel += k[i] * (np.cos(nu+w) + ecc[i]*np.cos(w))
         vel += vsys 
@@ -221,7 +222,7 @@ def keplerian_plusplus(time, p, k, ecc, omega, omdot, t0, vsys, M0, R0, M1, rela
             M = 2.*pi * (time-t0[i]) / p[i]
             E = ecc_anomaly(M, ecc[i])
             nu = true_anomaly(E, ecc[i])
-            wdot = omdot[i]*(4.8481*(0.000001)/365.25) #convert from arcsec per year to radians per day
+            wdot = omdot[i]*(np.pi/3600/180/365.25) #convert from arcsec per year to radians per day
             w = omega[i]+wdot*(time-t0[i])
             vel += k[i] * (np.cos(nu+w) + ecc[i]*np.cos(w))
             extra_vel = post_newtonian(k[i], nu, ecc[i], w, p[i], M0, R0, M1, relativistic_correction, tidal_correction,sini)
@@ -516,7 +517,7 @@ def sma_2body(P,M0,M1):
 
 def P_from_sma(a,M0,M1=0):
     '''
-    Calculates the speriod of an orbit given:
+    Calculates the period of an orbit given:
         a: sma (AU)
         M0: Central mass (M_sun)
         M1: Mass or second body (M_sun)

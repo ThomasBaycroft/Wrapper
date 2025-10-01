@@ -167,9 +167,11 @@ class RV_planets:
                 
         return data_values - orbit.RV_keplerian_sub(data_times)
     
-    def add_orbit_to_data(self,data_times,data_values,orbit):
-        
-        return data_values + orbit.RV_keplerian_sub(data_times)
+    def add_orbit_to_data(self,data_times,data_values,orbit,add=False):
+        if add:
+            return data_values + orbit.RV_keplerian_add(data_times)
+        else:
+            return data_values + orbit.RV_keplerian_sub(data_times)
     
     def rvs_no_binary(self):
         
@@ -214,13 +216,13 @@ class RV_planets:
         
         return res
     
-    def rv_curve_orbit(self,orbit):
+    def rv_curve_orbit(self,orbit,add=False):
         
-        return self.add_orbit_to_data(self.bjds,self.residuals(),orbit)
+        return self.add_orbit_to_data(self.bjds,self.residuals(),orbit,add)
     
-    def rv_curve_binary(self):
+    def rv_curve_binary(self,rem_precession=False):
         
-        return self.rv_curve_orbit(self.binary_orbit)
+        return self.rv_curve_orbit(self.binary_orbit,rem_precession)
     
     def rv_curve_planet(self,number=0):
         

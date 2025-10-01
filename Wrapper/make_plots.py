@@ -121,10 +121,10 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
     times = np.linspace(min(data.bjds),max(data.bjds),20000)
     if body == 'binary':
         # plot_rv_phase_binned(ax,orb.phase(data.bjds),data.rv_curve_binary()/1000)
-        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
-        ax.errorbar(phase(data.bjds),data.rv_curve_binary()/1000,fmt=marker,c=colour,mfc=fc,markersize=7.,label=label,alpha=alp)
-        ax.errorbar(phase(data.bjds)-1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
-        ax.errorbar(phase(data.bjds)+1,data.rv_curve_binary()/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
+        ax.errorbar(phase(data.bjds),data.rv_curve_binary(rem_precession=True)/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(phase(data.bjds),data.rv_curve_binary(rem_precession=True)/1000,fmt=marker,c=colour,mfc=fc,markersize=7.,label=label,alpha=alp)
+        ax.errorbar(phase(data.bjds)-1,data.rv_curve_binary(rem_precession=True)/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
+        ax.errorbar(phase(data.bjds)+1,data.rv_curve_binary(rem_precession=True)/1000,yerr=erbars/1000,fmt=marker,c='grey',alpha=0.6*alp)
         if lines:
             ax.plot(np.sort(phase(times)),orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='black')
             ax.plot(np.sort(phase(times))-1,orb.RV_keplerian_add(times)[np.argsort(phase(times))]/1000,c='black',alpha=0.5)
