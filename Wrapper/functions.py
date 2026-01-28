@@ -10,6 +10,7 @@ import numpy as np
 import scipy as sp
 from astropy import constants
 from PyAstronomy.pyTiming import pyPeriod
+import pandas as pd
 
 pi = np.pi
 c = constants.c.value
@@ -441,7 +442,7 @@ def get_K2(K1, M, P, ecc):
     #Newton-raphson
     M_est = mass(K1,P,ecc,M*Msun)
     k = semi_amplitude(M,M_est,P,ecc)
-    while abs(k-K1)>50:
+    while abs(k-K1)>0.1:
         M_est -= f_M(K1,M,M_est,P,ecc)/f_dash_M(K1,M,M_est,P,ecc)
         k = semi_amplitude(M,M_est,P,ecc)
 
@@ -940,17 +941,20 @@ def wdot_Tid_ragozzine(M1,M2,e,P,k2_1,k2_2,R1,R2):
     
     return (wdottid1 + wdottid2)*3600*180/np.pi
 
-def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,tides=False,k2_0=0,k2_1=0,R0=1,R1=1):
-    
+def planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,GR=True,tides=False,k2_0=0,k2_1=0,R0=1,R1=1):
+    return wdot_planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,GR,tides,k2_0,k2_1,R0,R1)
 
-    wdot -= wdot_GR(M0,M1,e1,P1)
+def wdot_planet_mass(M0,M1,e1,e2,P1,P2,w1,inc,wdot,GR=True,tides=False,k2_0=0,k2_1=0,R0=1,R1=1):
+    
+    if GR:
+        wdot -= wdot_GR(M0,M1,e1,P1)
     if tides:
         wdot -= wdot_Tid(M0, M1, e1, P1, k2_0, k2_1, R0, R1)
     if wdot < 0:
         wdot = 0.1
     
     m0 = 0.0000000000000000001
-    m1 = 10000
+    m1 = 1000000000
     wd0 = wdot_dyn(M0,M1,m0,e1,e2,P1,P2,w1,inc)
     wd1 = wdot_dyn(M0,M1,m1,e1,e2,P1,P2,w1,inc)
 
@@ -1018,7 +1022,7 @@ def planet_mass_scp(M0,M1,e1,e2,P1,P2,w1,inc,wdot):
 
 def delT(a,e,w0,wdot,t):
     '''
-    Calculates change in eclipse time from LTTE relative to a linear ephemeris given:
+    Calculates change in eclipse time from LTTE (from wdot) relative to a linear ephemeris given:
         a: semi-major axis of the eclipsing body about the centre of mass(AU)
         e: eccentricity
         w0: initial argument of pericentre (of the eclipsing body) rad
@@ -1033,7 +1037,7 @@ def delT(a,e,w0,wdot,t):
 
 def delTs_from_wdot(M0,M1,P,e,w0,wdot,t):
     '''
-    Calculates change in eclipse time from LTTE relative to a linear ephemeris given:
+    Calculates change in eclipse time from LTTE (from wdot) relative to a linear ephemeris given:
         M0: Mass of primary (Msun)
         M1: Mass of secondary (Msun)
         P: period of binary (days)
@@ -1294,7 +1298,7 @@ def semi_amp_LTTE(P,M0,M1,inc=np.pi/2):
     '''
     Calculate semi-amplitude of ETV signal given:
         P: Period (days)
-        M0: Mass of eclipsing binery (M_sun)
+        M0: Mass of eclipsing binary (M_sun)
         M1: Mass of perturbing body (M_sun)
     '''
     M_tot = (M0+M1)*Msun
@@ -1309,7 +1313,7 @@ def get_LTTE_mass_scp(K,M0,P):
         M0: Central mass (M_sun)
         K: semi-amplitude (s)
         P: Period (days)
-        e: eccentricity
+        # e: eccentricity
     Uses scipy.optimize.root
     '''
     K,M0,P = np.atleast_1d(K,M0,P)
@@ -1623,6 +1627,8 @@ def get_HW_stab_sma(M0,M1,a,e,ext=True,param='P'):
 def NG_acrit_out_vals(m1,m2,mp,eb,ep,Im,ab):
     '''
     Circumbinary critical semi-major axes from Georgakarakos 2024
+
+    (ab the semi-major axis of the binary)
     '''
     Mb = m2/(m1+m2)
     Mp = mp/(m1+m2)
@@ -1740,7 +1746,7 @@ def get_spectral_window_function(freqs, times):
         w_v[idx] = np.sum(np.exp(-2j * np.pi * freq * times)) / len(times)
     return np.abs(w_v)
 
-def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0.01,0.001])):
+def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0.01,0.001]),freq=None):
     '''
     Calculate Lombe-scargle periodogram, takes:
         times: datatimes (bjd)
@@ -1758,7 +1764,7 @@ def GLS_periodogram(times,rvs,errs,p_range=[0.5,2000],fapLevels=np.array([0.1, 0
     
     fbeg, fend = 1/p_range[1], 1/p_range[0]
     
-    clp_rv = pyPeriod.Gls((times,rvs,errs),fbeg=fbeg,fend=fend)
+    clp_rv = pyPeriod.Gls((times,rvs,errs),fbeg=fbeg,fend=fend,freq=freq)
     
     # Find the frequency with the highest power
     max_frequency = clp_rv.freq[np.argmax(clp_rv.power)]
@@ -1809,7 +1815,61 @@ def chi2_red(resids,errs,numparams):
 #Other Functions
 #################################################
 
+def read_posterior_samples(loc):
+    with open(loc+'posterior_sample.txt') as f:
+        names = f.readline().split()[1:]
+    posts = pd.read_csv(loc+'posterior_sample.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=names)
+    posterior_info = pd.read_csv(loc+'posterior_sample_info.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=['Level','logL','tiebreak','ID'])
+    posts['logL'] = posterior_info['logL']
+    return posts
+
+def read_CBPs_spreadsheet(comment=True):
+    file = '~/Documents/BEBOP/CBPs_all_params.xlsx'
+    CBPs = pd.read_excel(file)
+    if comment:
+        CBPs = CBPs[CBPs.Comment!='#'].reset_index(drop=True)
+    CBPs['M_conv'] = np.array(CBPs['M_pl_units']=='Earth')*Me/Msun + np.array(CBPs['M_pl_units']=='Jupiter')*Mj/Msun + np.array(CBPs['M_pl_units']=='Sun')
+    CBPs['M_pl'] = CBPs['M_pl']*CBPs['M_conv']
+    CBPs['M_pl+'] = CBPs['M_pl+']*CBPs['M_conv']
+    CBPs['M_pl-'] = CBPs['M_pl-']*CBPs['M_conv']
+
+    CBPs['M_bin'] = CBPs['M_pri']+CBPs['M_sec']
+    CBPs['M_bin+'] = CBPs['M_pri+']+CBPs['M_sec+']
+    CBPs['M_bin-'] = CBPs['M_pri-']+CBPs['M_sec-']
+
+    CBPs['a_pl'] = sma_tot(CBPs['P_pl'],CBPs['M_pri']+CBPs['M_sec'],CBPs['M_pl'])
+    CBPs['a_pl+_ecc'] = sma_tot(CBPs['P_pl']+CBPs['P_pl+'],CBPs['M_pri']+CBPs['M_sec']+CBPs['M_pri+']+CBPs['M_sec+'],CBPs['M_pl']+CBPs['M_pl+'])*(1+CBPs['e_pl+']+CBPs['e_pl'])-CBPs['a_pl'] 
+    CBPs['a_pl-_ecc'] = CBPs['a_pl'] -sma_tot(CBPs['P_pl']-CBPs['P_pl-'],CBPs['M_pri']+CBPs['M_sec']-CBPs['M_pri-']-CBPs['M_sec-'],CBPs['M_pl']-CBPs['M_pl-'])*(1-CBPs['e_pl+']-CBPs['e_pl'])
+    CBPs['a_pl+'] = sma_tot(CBPs['P_pl']+CBPs['P_pl+'],CBPs['M_pri']+CBPs['M_sec']+CBPs['M_pri+']+CBPs['M_sec+'],CBPs['M_pl']+CBPs['M_pl+'])-CBPs['a_pl'] 
+    CBPs['a_pl-'] = CBPs['a_pl'] -sma_tot(CBPs['P_pl']-CBPs['P_pl-'],CBPs['M_pri']+CBPs['M_sec']-CBPs['M_pri-']-CBPs['M_sec-'],CBPs['M_pl']-CBPs['M_pl-'])
+
+    CBPs['rp_pl'] = CBPs['a_pl']*(1-CBPs['e_pl'])
+    CBPs['rp_pl+'] = CBPs['a_pl+']*(1-CBPs['e_pl-'])
+    CBPs['rp_pl-'] = CBPs['a_pl-']*(1-CBPs['e_pl+'])
+
+    # CBPs['a_'] = sma_tot(CBPs['P_pl'],CBPs['M_pri']+CBPs['M_sec'],CBPs['M_pl'])
+
+    CBPs['Stab_as'] = [get_HW_stab(CBPs['M_pri'][i],CBPs['M_sec'][i],CBPs['P_bin'][i],CBPs['e_bin'][i],ext=True,param='a') for i in range(len(CBPs['M_pri']))]
+
+    CBPs['form_Ps'] = 50*np.array(CBPs['P_bin'])
+    CBPs['form_as'] = sma_tot(CBPs['form_Ps'],CBPs['M_pri']+CBPs['M_sec'],CBPs['M_pl'])
+
+    CBPs['a_pl_scaled'] = CBPs['a_pl']/CBPs['Stab_as']
+    CBPs['a_pl+_scaled'] = CBPs['a_pl+']/CBPs['Stab_as']
+    CBPs['a_pl-_scaled'] = CBPs['a_pl-']/CBPs['Stab_as']
+
+    CBPs['M_pl_scaled'] = CBPs['M_pl']/(CBPs['M_pri']+CBPs['M_sec'])
+    CBPs['M_pl+_scaled'] = CBPs['M_pl+']/(CBPs['M_pri-']+CBPs['M_sec-'])
+    CBPs['M_pl-_scaled'] = CBPs['M_pl-']/(CBPs['M_pri+']+CBPs['M_sec+'])
+
+    CBPs['a_pl+_ecc_scaled'] = CBPs['a_pl+_ecc']/CBPs['Stab_as']
+    CBPs['a_pl-_ecc_scaled'] = CBPs['a_pl-_ecc']/CBPs['Stab_as']
+
+    return CBPs
+
+
 def K_BBH(m1,m2,m3,pin,pout,I,ecc):
+    #amplitude of RV deviation from BBH interacting with a keplerian orbit (Hayashi & Suto ?)
     
     M1 = m1*Msun
     M2 = m2*Msun
@@ -1848,3 +1908,16 @@ def interpolate(xs,ys,value):
         width = abs(xsides[1] - xsides[0])
         return sum((width-abs(value-xsides))/width*ysides)
 
+def hms_to_deg(h,m,s):
+    secs = h*3600 + m*60 + s
+    degs = secs/3600/24*360
+    return degs
+
+def dms_to_deg(d,m,s):
+    degs = d + m/60 + s/3600
+    return degs
+
+def deg_to_hms(degs):
+    secs = degs/360*3600*24
+    h = np.floor(secs/3600)
+    m = np.floor()

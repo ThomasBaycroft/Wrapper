@@ -108,7 +108,8 @@ class model:
     def kima_sample_planets(self,post,numpl,tper=True,M0epoch=None):
         for i in range(numpl):
             if tper:
-                params = post[['P'+str(i),'K'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i),'wdot'+str(i)]].values.tolist()
+                params = post[['P'+str(i),'K'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i)]].values.tolist()
+                params.append(0)
             else:
                 params = post[['P'+str(i),'K'+str(i),'phi'+str(i),'ecc'+str(i),'w'+str(i)]].values.tolist()
                 params[2] = M0epoch - params[0]*params[2]/2/np.pi

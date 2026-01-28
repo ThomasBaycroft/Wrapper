@@ -95,6 +95,14 @@ def read_posterior_file(loc,res_numpl=False,nump=0.1,combine=False,columns=['P',
         posterior_file = posterior_file.reset_index(drop=True)    
     return posterior_file
 
+def read_posteriortxt(loc):
+    with open(loc+'posterior_sample.txt') as f:
+        names = f.readline().split()[1:]
+    posts = pd.read_csv(loc+'posterior_sample.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=names)
+    posterior_info = pd.read_csv(loc+'posterior_sample_info.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=['Level','logL','tiebreak','ID'])
+    posts['logL'] = posterior_info['logL']
+    return posts
+
 def Samples_BFs(loc,maxNp):
     
     
@@ -241,21 +249,37 @@ def read_rv_data(file,SB2=False,bisFW=False,skiprows=[1]):
                 rvdata_pri = rvdata[['bjd','vrad','svrad']]
             datas.append(rvdata_pri)
     except KeyError:
-        if SB2:
-            rvdata_pri = rvdata[['jdb','vrad1','svrad1']]
-            rvdata_sec = rvdata[['jdb','vrad2','svrad2']]
-            rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
-            datas.append(rvdata_pri)
-            datas.append(rvdata_sec)
-        else:
-            if bisFW:
-                rvdata_pri = rvdata[['jdb','vrad','svrad','bis_span','fwhm']]
-                rvdata_pri.columns = ['bjd','vrad','svrad','bis_span','fwhm']
+        try:
+            if SB2:
+                rvdata_pri = rvdata[['jdb','vrad1','svrad1']]
+                rvdata_sec = rvdata[['jdb','vrad2','svrad2']]
+                rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
+                datas.append(rvdata_pri)
+                datas.append(rvdata_sec)
             else:
-                rvdata_pri = rvdata[['jdb','vrad','svrad']]
-                rvdata_pri.columns = ['bjd','vrad','svrad']
-            datas.append(rvdata_pri)
-    
+                if bisFW:
+                    rvdata_pri = rvdata[['jdb','vrad','svrad','bis_span','fwhm']]
+                    rvdata_pri.columns = ['bjd','vrad','svrad','bis_span','fwhm']
+                else:
+                    rvdata_pri = rvdata[['jdb','vrad','svrad']]
+                    rvdata_pri.columns = ['bjd','vrad','svrad']
+                datas.append(rvdata_pri)
+        except KeyError: 
+            if SB2:
+                rvdata_pri = rvdata[['tdb_jd','vrad1','svrad1']]
+                rvdata_sec = rvdata[['tdb_jd','vrad2','svrad2']]
+                rvdata_sec.columns,rvdata_pri.columns = ['bjd','vrad','svrad'],['bjd','vrad','svrad']
+                datas.append(rvdata_pri)
+                datas.append(rvdata_sec)
+            else:
+                if bisFW:
+                    rvdata_pri = rvdata[['tdb_jd','vrad','svrad','bis_span','fwhm']]
+                    rvdata_pri.columns = ['bjd','vrad','svrad','bis_span','fwhm']
+                else:
+                    rvdata_pri = rvdata[['tdb_jd','vrad','svrad']]
+                    rvdata_pri.columns = ['bjd','vrad','svrad']
+                datas.append(rvdata_pri)
+        
     return datas
     
  
@@ -300,10 +324,12 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     columns_of_planetary_interest = ['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']
     #for posterior file restricted to numpl
     posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
-    posteriors_single = posteriors_single[posteriors_single['P']>0.0]
+    if numpl>0:
+        posteriors_single = posteriors_single[posteriors_single['P']>0.0]
     #for the full posterior file (excluding not found planets)
     full_posteriors = pfa.combine_planets(posterior_file,maxNp,maxNp,columns_of_planetary_interest)
-    full_posteriors = full_posteriors[full_posteriors['P']>0.0]
+    if maxNp>0:
+        full_posteriors = full_posteriors[full_posteriors['P']>0.0]
     
     
     ##############################################################################

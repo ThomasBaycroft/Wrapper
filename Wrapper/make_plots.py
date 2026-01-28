@@ -145,6 +145,14 @@ def plot_rv_orbit(ax,orb,data,body,colour='b',fill=True,lines=True,er_bar_col='g
             ax.axhline(0,c='black',alpha=0.6)
         m = max(-min(data.residuals()),max(data.residuals()))*1.1/1000
         ax.set(ylim=[-m,m],ylabel = 'Residuals')#,xlabel='Time (bjd-'+str(sub)+')')
+    
+    elif body == 'residuals_unphased_ms':
+        ax.errorbar(data.bjds-sub,data.residuals(),yerr=erbars,fmt='none',c=er_bar_col,alpha=0.7*alp)
+        ax.errorbar(data.bjds-sub,data.residuals(),fmt=marker,c=colour,mfc=fc,label=label,alpha=alp)
+        if lines:
+            ax.axhline(0,c='black',alpha=0.6)
+        m = max(-min(data.residuals()),max(data.residuals()))*1.1
+        ax.set(ylim=[-m,m],ylabel = r'Res (m s$^{-1}$)')#,xlabel='Time (bjd-'+str(sub)+')')
         
     elif body == 'residuals':
         ax.errorbar(phase(data.bjds),data.residuals()/1000,yerr=erbars/1000,fmt='none',c=er_bar_col,alpha=0.7*alp)
