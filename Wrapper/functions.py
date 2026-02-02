@@ -1289,6 +1289,9 @@ def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
     SNR = alpha*(Nobs**0.5)/sigma
     return SNR
 
+def P_from_astromSNR(M0,M1,SNR,dist,Nobs=70,sigma=30):
+    alph = SNR*sigma/np.sqrt(Nobs)
+
 
 #################################################
 #ETV funtions
