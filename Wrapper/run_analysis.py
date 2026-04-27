@@ -81,7 +81,7 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,
         # posterior_file['transit_pri'],posterior_file['transit_sec'] =a,b
         posterior_file.to_csv(loc+'posterior_file.csv',index=False)
 
-def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0.0):
+def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0.0,P_Prior=[10,4000]):
     #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
     with open(loc+'posterior_sample.txt') as f:
         names = f.readline().split()[1:]
@@ -101,7 +101,7 @@ def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0
     try:
         posterior_file = pd.read_csv(loc+'posterior_file.csv')
     except FileNotFoundError:
-        posterior_file= pfa.add_columns_Gaia(posterior_file, epoch, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err)
+        posterior_file= pfa.add_columns_Gaia(posterior_file, epoch, nKOs,maxNp,star_mass=star_mass,star_mass_err=star_mass_err,P_Prior)
         posterior_file.to_csv(loc+'posterior_file.csv',index=False)
         
 def read_posterior_file(loc,res_numpl=False,nump=0.1,combine=False,columns=['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']):
@@ -661,5 +661,60 @@ def get_percentile(x,y,bins,percentile=99,log=False):
     return bincentres, percs
 
 
-def make_gaia_datasheets():
-    pass
+def make_gaia_datasheets(system,outputloc,inputloc,datafile,enfnp=0.1):
+    loc = inputloc
+    posterior_file = pd.read_csv(loc+'posterior_file.csv')
+    maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,loc)
+    if enfnp >=1:
+        numpl = enfnp
+
+    #now only consider the posteriors with the correct number of planets
+    len_posts = len(posterior_file)
+    posteriors = posterior_file[posterior_file['Np']==numpl]
+    
+    #Get the maximum likelihood solution
+    posts = posteriors
+    #first without any cuts, the true maximum likelihood solution
+    MaxLiSolution_nocut = posts[posts['logL']==max(posts['logL'])].head(1)
+    
+    #then if ecc not distinct from zero in the posteriors, choose the maximum likelihood with ecc<0.1
+    for i in range(numpl):
+        # e_hist = np.histogram(posteriors['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
+        e_hist = np.histogram(posts['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
+        if np.argmax(e_hist) in [0,1,2]:
+            emax = 0.1
+        else:
+            emax = 1.0
+        posts = posts[posts['ecc'+str(i)]<=emax]
+    
+    MaxLiSolution = posts[posts['logL']==max(posts['logL'])].head(1)
+
+    #combine the columns for multiple planets into one for periodogram search
+    columns_of_planetary_interest = ['P','phi','ecc','a0','w', 'cosi','W','M_pl_','sma_pl_','Tper']
+    #for posterior file restricted to numpl
+    posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
+    if numpl>0:
+        posteriors_single = posteriors_single[posteriors_single['P']>0.0]
+    #for the full posterior file (excluding not found planets)
+    full_posteriors = pfa.combine_planets(posterior_file,maxNp,maxNp,columns_of_planetary_interest)
+    if maxNp>0:
+        full_posteriors = full_posteriors[full_posteriors['P']>0.0]
+
+    ##############################################################################
+    #find peaks in combined periodogram 
+    ##############################################################################
+    #currently using simple peak finding, could do with refining maybe more variables
+    variables = ['P','a0']
+    indices=None
+    indices_bin=None
+    indices_KO = None
+    indices_full=None
+    
+    for var in variables:
+        maxlivar=[]
+        for i in range(numpl):
+            maxlivar.append(MaxLiSolution[var+str(i)])
+        indices = pf.simple_peaks(posteriors_single, var, maxlivar, numpl, pre_index=indices)
+        indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
+            
+    ##############################################################################

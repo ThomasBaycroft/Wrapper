@@ -167,7 +167,7 @@ def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
     for i in range(nKOs):
         #calculate the mass of any additional known objects
         posterior_file['M_KO_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['KO_P'+str(i)],posterior_file['KO_a0'+str(i)],Minterior,posterior_file['parallax'])
-        posterior_file['KO_sma'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],Minterior,posterior_file['M_KO_'+str(i)])[1]
+        posterior_file['sma_KO'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],Minterior,posterior_file['M_KO_'+str(i)])[1]
         posterior_file['KO_Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['KO_P'+str(i)]*posterior_file['KO_phi'+str(i)]/2/np.pi
         if np.mean(posterior_file['KO_P'+str(i)]) < P_prior[0]:
             Minterior += posterior_file['M_KO_'+str(i)]
@@ -175,8 +175,8 @@ def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
         #get indices of where no planet is found for this column to make the masses zero
         isplanet = posterior_file['P'+str(i)]>0.0
         #calculate the mass of any additional known objects
-        posterior_file['M_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file['a0'+str(i)],Minterior,posterior_file['parallax'])*isplanet
-        posterior_file['sma'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_'+str(i)])[1]*isplanet
+        posterior_file['M_pl_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file['a0'+str(i)],Minterior,posterior_file['parallax'])*isplanet
+        posterior_file['sma_pl'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_'+str(i)])[1]*isplanet
         Tpers = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi
         posterior_file['Tper'+str(i)] = Tpers*isplanet
     
