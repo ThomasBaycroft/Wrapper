@@ -26,6 +26,11 @@ Msat = 5.68319*10**(26)
 Re = constants.R_earth.value
 Rj = constants.R_jup.value
 
+dty = 1/365.25
+dty2 = dty**2
+dty3 = dty**3
+sectoyear = 3600*24*365.25
+
 
 #################################################
 #Radial Velocity functions
@@ -313,7 +318,7 @@ def masses(SB2,K,P,e,M1=1,q=1,sini=1):
         M1 = (mass_func*(1+q)**2)/Msun/(sini**3)
         M2 = M1*q
     else:
-        M2 = np.array(get_mass(K,M1,P,e))/sini
+        M2 = np.array(get_mass(K/sini,M1,P,e))
             
     return M1,M2
 
@@ -385,17 +390,17 @@ def get_mass(K,M0,P,e):
     # print(e)
     for i in range(K.size):
         a = 0
-        b = 2*M0[i]
+        b = 40*M0[i]
         c = b/2
-        eps = semi_amplitude(M0[i],b,P[i],e[i]) - semi_amplitude(M0[i],a,P[i],e[i])
+        eps = semi_amplitude_2(M0[i],b,P[i],e[i]) - semi_amplitude_2(M0[i],a,P[i],e[i])
         while eps>0.000000001 or eps < -0.0000000001: 
             c = (b+a)/2
-            x = K[i] - semi_amplitude(M0[i],c,P[i],e[i])
+            x = K[i] - semi_amplitude_2(M0[i],c,P[i],e[i])
             if x < 0:
                 b = c
             else:
                 a = c
-            eps = semi_amplitude(M0[i],b,P[i],e[i]) - semi_amplitude(M0[i],a,P[i],e[i])
+            eps = semi_amplitude_2(M0[i],b,P[i],e[i]) - semi_amplitude_2(M0[i],a,P[i],e[i])
         M.append(c)
     return M
 
@@ -424,7 +429,7 @@ def get_mass_scp(K,M0,P,e):
     '''
     
     def fun(M2):
-        return semi_amplitude(M0,M2,P,e) - K    
+        return semi_amplitude_2(M0,M2,P,e) - K    
     Mass = sp.optimize.root(fun,M0)
     if Mass.message != 'The solution converged.':
         print('Warning: Mass not conerged with message',Mass.message)
@@ -1157,7 +1162,28 @@ def vtan_ecc(M0,M1,P,ecc,f):
 
 def wss(da,dd,par,mua,mud,t,psi,pf,tref):
     T = t - tref
-    return (da + mua*T)*np.sin(psi) + (dd +mud*T)*np.cos(psi) +par*pf
+    return (da + mua*dty*T)*np.sin(psi) + (dd +mud*dty*T)*np.cos(psi) +par*pf
+
+def wss_dep(da,dd,par,mua,mud,t,pfra,pfdec,tref):
+        #Obtain RA and DEC values for parallax and PM plot curve
+        T = t - tref
+        return (da + mua*dty*T) + pfra*par,(dd +mud*dty*T)+pfdec*par
+
+def waccels(accela,acceld,jerka,jerkd,t,psi,tref):
+    T = t - tref
+    return ((1/2)*accela*dty2*T**2 + (1/6)*jerka*dty3*T**3)*np.sin(psi) + ((1/2)*acceld*dty2*T**2 + (1/6)*jerkd*dty3*T**3)*np.cos(psi)
+
+def ra_dec_waccels(accela,acceld,jerka,jerkd,t,tref):
+    T = t - tref
+    return ((1/2)*accela*dty2*T**2 + (1/6)*jerka*dty3*T**3), ((1/2)*acceld*dty2*T**2 + (1/6)*jerkd*dty3*T**3)
+
+def ra_dec_wpm(da,dd,par,mua,mud,t,tref):
+    #Obtain RA and DEC values for parallax and PM plot curve
+    T = t - tref
+    return (da + mua*dty*T),(dd +mud*dty*T)
+
+def wscanbias(A,theta,k,psi):
+    return A*np.cos(k*(psi-theta))
 
 def wk_orb(P,Tper,e,cosi,W,w,a0,t,psi):
     
@@ -1269,6 +1295,34 @@ def sma_AST(P,M0,M1,plx):
     '''
     return plx*(P/365.25)**(2/3)*(M0+M1)**(1/3)*(M1/(M0+M1))
 
+def get_mass_AST_scp(P,a0,M0,plx,startguess=0.01):
+    P,a0,M0,plx = np.atleast_1d(P,a0,M0,plx)
+
+    if len(M0)<len(P):
+        M0 = np.ones_like(P)*M0[0]
+    if len(a0)<len(P):
+        a0 = np.ones_like(P)*a0[0]
+    if len(plx)<len(P):
+        plx = np.ones_like(P)*plx[0]
+
+    masses=[]
+    for i in range(len(P)):
+        def fun(m):
+            xxx = sma_AST(P[i],M0[i],m,plx[i]) - a0[i]
+            # print(xxx)
+            return xxx
+        Mass = sp.optimize.root(fun,startguess)
+        masses.append(Mass.x[0])
+        # print(Mass.x)
+    if Mass.message != 'The solution converged.':
+        print('Warning: Mass not conerged with message',Mass.message)
+        
+    if len(masses)>=2:
+        ret = masses
+    else:
+        ret = masses[0]
+    return ret
+
 def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
     '''
     Gives the signal-noise ratio of an astrometric orbit as detectable in Gaia for a binary/exoplanetary orbit. Following the equations in Sahlmann, Triaud, and Martin 2015.
@@ -1280,7 +1334,7 @@ def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
         Nobs: number of Gaia observations (default 70)
         sigma: precision of individual epoch measurments (micro-arcseconds) default 30
     '''
-    abar_rel = sma_tot(P,M0,M1) #semi-major axis of the orbit of the primary body in AU
+    abar_rel = sma_tot(P,M0,M1) #semi-major axis of the combined orbit in AU
     arel = (abar_rel/dist)*10**6 #abar_rel is in AU, arel in micro-arcsec
 
     f = M1/(M0+M1)
@@ -1289,8 +1343,33 @@ def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
     SNR = alpha*(Nobs**0.5)/sigma
     return SNR
 
-def P_from_astromSNR(M0,M1,SNR,dist,Nobs=70,sigma=30):
-    alph = SNR*sigma/np.sqrt(Nobs)
+def P_from_astromSNR(M0,M1,SNR,dist,Beta=0,Nobs=70,sigma=30):
+    '''
+    Gives the Period that would correspond to a given astrometri SNR from Gaia given:
+        M0: Primary mass (Msun)
+        M1: Secondary mass (Msun)
+        SNR: signal-noise ratio desired
+        dist: distance to the sytsem (parsecs)
+        Beta: flux ratio of secondary (F1/(F0+F1))
+        Nobs: number of observed epochs with Gaia
+        sigma: astrometrci precision (muas)
+    '''
+    alpha = SNR*sigma/np.sqrt(Nobs) #in muas
+    f = M1/(M0+M1)
+    arel = alpha/(f-Beta)
+    abar_rel = arel*dist/(10**6) #in AU 
+    P = abar_rel**(3/2)*(M0+M1)**(-0.5)*365.25
+    return P
+
+def semi_phot_to_semi_amp(a0,P,e,cosi,plx):
+    Per = P/365.25
+    sini = np.sqrt(1 - cosi**2)
+    return a0/plx/Per*2*np.pi*sini/np.sqrt(1-e**2)*AU/sectoyear
+
+def semi_amp_to_semi_phot(K,P,e,cosi,plx):
+    Per = P/365.25
+    sini = np.sqrt(1 - cosi**2)
+    return (K*sectoyear/AU)*plx*Per/2/np.pi/sini*np.sqrt(1-e**2)
 
 
 #################################################
@@ -1819,11 +1898,14 @@ def chi2_red(resids,errs,numparams):
 #################################################
 
 def read_posterior_samples(loc):
-    with open(loc+'posterior_sample.txt') as f:
-        names = f.readline().split()[1:]
-    posts = pd.read_csv(loc+'posterior_sample.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=names)
-    posterior_info = pd.read_csv(loc+'posterior_sample_info.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=['Level','logL','tiebreak','ID'])
-    posts['logL'] = posterior_info['logL']
+    try:
+        posts = pd.read_csv(loc+'posterior_file.csv')
+    except:
+        with open(loc+'posterior_sample.txt') as f:
+            names = f.readline().split()[1:]
+        posts = pd.read_csv(loc+'posterior_sample.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=names)
+        posterior_info = pd.read_csv(loc+'posterior_sample_info.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=['Level','logL','tiebreak','ID'])
+        posts['logL'] = posterior_info['logL']
     return posts
 
 def read_CBPs_spreadsheet(comment=True):

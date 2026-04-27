@@ -80,6 +80,29 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,
         #     b.append(y)
         # posterior_file['transit_pri'],posterior_file['transit_sec'] =a,b
         posterior_file.to_csv(loc+'posterior_file.csv',index=False)
+
+def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0.0):
+    #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
+    with open(loc+'posterior_sample.txt') as f:
+        names = f.readline().split()[1:]
+    posterior_file = pd.read_csv(loc+'posterior_sample.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=names)
+    
+    posterior_info = pd.read_csv(loc+'posterior_sample_info.txt',sep='\s+',header=None,skiprows=[0,1],engine='python',names=['Level','logL','tiebreak','ID'])
+    posterior_file['logL'] = posterior_info['logL']
+    
+    
+    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file)
+    
+    ##############################################################################
+    #add columns with other parameters, if this file exists: open it; if not: create it
+    #then get maxlisolution and combine the posterior file to have a single planet column
+    ##############################################################################
+    
+    try:
+        posterior_file = pd.read_csv(loc+'posterior_file.csv')
+    except FileNotFoundError:
+        posterior_file= pfa.add_columns_Gaia(posterior_file, epoch, nKOs, maxNp,star_mass=star_mass,star_mass_err=star_mass_err)
+        posterior_file.to_csv(loc+'posterior_file.csv',index=False)
         
 def read_posterior_file(loc,res_numpl=False,nump=0.1,combine=False,columns=['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']):
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
@@ -636,3 +659,7 @@ def get_percentile(x,y,bins,percentile=99,log=False):
             bincentres.append((bins[i]+bins[i+1])/2)
             
     return bincentres, percs
+
+
+def make_gaia_datasheets():
+    pass

@@ -25,9 +25,14 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
     '''
     #add columns with other parameters, masses, au, P_anom, wdot_theory, T0 (...)
 
-    incs = np.random.randn(len(posterior_file))*inc_err + inc
-    sini = np.sin(incs)
-    posterior_file['sini'] = sini
+    try:
+        cosi = posterior_file['KO_cosi0']
+        sini = np.sqrt(1 - cosi**2)
+        posterior_file['sini'] = sini
+    except:
+        incs = np.random.randn(len(posterior_file))*inc_err + inc
+        sini = np.sin(incs)
+        posterior_file['sini'] = sini
 
     if phiw == True:
         for i in range(nKOs):
@@ -144,6 +149,39 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
 
 
     return posterior_file
+
+def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_prior=[10,4000]):
+        
+    #get mass of central star
+    N = len(posterior_file)
+    posterior_file['Mstar'] = np.random.randn(N)*star_mass_err + star_mass
+    Minterior = posterior_file['Mstar']
+
+    #epoch
+    posterior_file['Epoch'] = np.ones(N)*epoch
+
+    # #centre angles calculate the time of periastron for the binary
+    # posterior_file['KO_w0'] = centre_angles(posterior_file['KO_w0'])
+    # posterior_file['KO_phi0'] = centre_angles(posterior_file['KO_phi0'])
+
+    for i in range(nKOs):
+        #calculate the mass of any additional known objects
+        posterior_file['M_KO_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['KO_P'+str(i)],posterior_file['KO_a0'+str(i)],Minterior,posterior_file['parallax'])
+        posterior_file['KO_sma'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],Minterior,posterior_file['M_KO_'+str(i)])[1]
+        posterior_file['KO_Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['KO_P'+str(i)]*posterior_file['KO_phi'+str(i)]/2/np.pi
+        if np.mean(posterior_file['KO_P'+str(i)]) < P_prior[0]:
+            Minterior += posterior_file['M_KO_'+str(i)]
+    for i in range(maxNp):
+        #get indices of where no planet is found for this column to make the masses zero
+        isplanet = posterior_file['P'+str(i)]>0.0
+        #calculate the mass of any additional known objects
+        posterior_file['M_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file['a0'+str(i)],Minterior,posterior_file['parallax'])*isplanet
+        posterior_file['sma'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_'+str(i)])[1]*isplanet
+        Tpers = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi
+        posterior_file['Tper'+str(i)] = Tpers*isplanet
+    
+    return posterior_file
+
 
 def combine_planets(posterior_file,maxNp,numpl,columns_of_planetary_interest):
     

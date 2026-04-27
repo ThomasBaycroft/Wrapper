@@ -559,9 +559,7 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
             
     
     fig.set_size_inches(10.25,18.75)
-    plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')
-    
-    
+    plt.savefig(outputloc+system+'_'+str(sheet_number)+'_extras.png')       
 
 def make_diagnostics(system,outputloc,sheet_number,loc):
     fig = plt.figure(constrained_layout=True)
@@ -615,7 +613,6 @@ def make_diagnostics(system,outputloc,sheet_number,loc):
     # pdf_merger.write(outputloc+system+'_'+str(sheet_number)+'_diagnostics.pdf')   
       
     # os.system('rm '+outputloc+system+'_'+str(sheet_number)+'_diagnostics1.pdf'+' '+outputloc+'diagnostics2.pdf')
-
     
 def write_header_text(ax,numpl,pri_data_list,sec_data_list=[],SB2=False):
 
