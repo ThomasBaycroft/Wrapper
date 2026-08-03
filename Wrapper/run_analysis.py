@@ -9,9 +9,10 @@ Created on Fri Dec 16 10:06:38 2022
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import sys
+from scipy.stats import norm, t
+# import sys
 import time
-import corner
+# import corner
 from astropy import constants
 # import seaborn as sns
 pi = np.pi
@@ -29,6 +30,10 @@ from .RVdata_analysis import RV_planets, orbit
 from . import make_plots as mplt
 from . import orbit_plot as op
 from . import make_datasheets as md
+from . import make_gaia_datasheets as mgd
+from . import GAIAdata_analysis as gda
+
+# import kima
 
 
 time0 = time.time()
@@ -43,7 +48,7 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,
     posterior_file['logL'] = posterior_info['logL']
     
     
-    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file)
+    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,binary)
    
     ##############################################################################
     #from posterior sample file get the values/truth of various things:
@@ -81,7 +86,7 @@ def make_posterior_file_RV(loc,epoch,binary,SB2,star_mass=1.0,star_mass_err=0.0,
         # posterior_file['transit_pri'],posterior_file['transit_sec'] =a,b
         posterior_file.to_csv(loc+'posterior_file.csv',index=False)
 
-def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0.0,P_Prior=[10,4000]):
+def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0.0,P_prior=[10,4000]):
     #import the posterior samples as a dataframe and add a column which is the likelihood of each posterior sample
     with open(loc+'posterior_sample.txt') as f:
         names = f.readline().split()[1:]
@@ -91,7 +96,7 @@ def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0
     posterior_file['logL'] = posterior_info['logL']
     
     
-    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file)
+    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,binary=False)
     
     ##############################################################################
     #add columns with other parameters, if this file exists: open it; if not: create it
@@ -101,7 +106,7 @@ def make_posterior_file_Gaia(loc,epoch=2457936.875,star_mass=1.0,star_mass_err=0
     try:
         posterior_file = pd.read_csv(loc+'posterior_file.csv')
     except FileNotFoundError:
-        posterior_file= pfa.add_columns_Gaia(posterior_file, epoch, nKOs,maxNp,star_mass=star_mass,star_mass_err=star_mass_err,P_Prior)
+        posterior_file= pfa.add_columns_Gaia(posterior_file, epoch, nKOs,maxNp,star_mass=star_mass,star_mass_err=star_mass_err,P_prior=P_prior)
         posterior_file.to_csv(loc+'posterior_file.csv',index=False)
         
 def read_posterior_file(loc,res_numpl=False,nump=0.1,combine=False,columns=['P','K','phi','ecc','w','M_pl_','a_pl_','Tper']):
@@ -219,7 +224,7 @@ def FIP_TIP(loc,maxNp,P_prior,dataspan):
         
         
         
-def calc_nump_variables(posterior_file,loc=None):
+def calc_nump_variables(posterior_file,binary=True,loc=None):
     #calculate the Bayes' Factor for each number of planets relative to one less 
     #and therefore the number of planets that we are going to plot
     maxNp = int(posterior_file['maxNp'][0])
@@ -244,7 +249,7 @@ def calc_nump_variables(posterior_file,loc=None):
     found = False
     while found == False:
         try:
-            P = posterior_file['KO_P'+str(nKOs+1)]
+            P = posterior_file['KO_P'+str(nKOs+int(binary))]
             nKOs+=1
         except:
             found = True
@@ -310,7 +315,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
-    maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,loc)
+    maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,binary=binary,loc=loc)
     if enfnp >=1:
         numpl = enfnp
     #now only consider the posteriors with the correct number of planets
@@ -661,22 +666,26 @@ def get_percentile(x,y,bins,percentile=99,log=False):
     return bincentres, percs
 
 
-def make_gaia_datasheets(system,outputloc,inputloc,datafile,enfnp=0.1):
+def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT=False,enfnp=0.1,P_prior=[10,5000],model=None,res=None,acceleration=False,jerk=False,scan_dep_signal=False,n_scan_dep_components=0,star_mass=1.0,Gaia_epoch=2457936.875):
     loc = inputloc
     posterior_file = pd.read_csv(loc+'posterior_file.csv')
-    maxNp, numpl,nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,loc)
+    maxNp, numpl, nKOs, Bayes_factors, Nps, Bayes_factors_samps = calc_nump_variables(posterior_file,binary=False,loc=loc)
+    BFs_nps = [Bayes_factors,Nps,Bayes_factors_samps]
     if enfnp >=1:
         numpl = enfnp
-
+    
     #now only consider the posteriors with the correct number of planets
     len_posts = len(posterior_file)
-    posteriors = posterior_file[posterior_file['Np']==numpl]
+    posteriors = posterior_file[posterior_file['Np']==numpl].reset_index(drop=True)
     
     #Get the maximum likelihood solution
-    posts = posteriors
+    posts = posteriors.copy()
     #first without any cuts, the true maximum likelihood solution
     MaxLiSolution_nocut = posts[posts['logL']==max(posts['logL'])].head(1)
+    posteriors_np = posteriors.copy()
+    posteriors_np = posteriors_np[posteriors_np.Np == numpl]
     
+    mask = np.ones(len(res.sample))
     #then if ecc not distinct from zero in the posteriors, choose the maximum likelihood with ecc<0.1
     for i in range(numpl):
         # e_hist = np.histogram(posteriors['ecc'+str(i)],bins = np.linspace(0,1,100))[0]
@@ -686,11 +695,21 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,enfnp=0.1):
         else:
             emax = 1.0
         posts = posts[posts['ecc'+str(i)]<=emax]
+        if res is not None:
+            mask = np.logical_and(mask,res.sample.T[res.indices['planets.e']][i] < emax)
     
     MaxLiSolution = posts[posts['logL']==max(posts['logL'])].head(1)
+    
+    if res is not None:
+        if numpl>=1:
+            pykima_ML = res.maximum_likelihood_sample(mask=mask,Np=numpl,printit=False)
+        else:
+            pykima_ML = res.maximum_likelihood_sample(Np=0,printit=False)
+    else:
+        pykima_ML = None
 
     #combine the columns for multiple planets into one for periodogram search
-    columns_of_planetary_interest = ['P','phi','ecc','a0','w', 'cosi','W','M_pl_','sma_pl_','Tper']
+    columns_of_planetary_interest = ['P','phi','ecc','a','w', 'cosi','W','M_pl_','sma_pl_','inc','Tper']
     #for posterior file restricted to numpl
     posteriors_single = pfa.combine_planets(posteriors, maxNp, numpl, columns_of_planetary_interest)
     if numpl>0:
@@ -704,7 +723,7 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,enfnp=0.1):
     #find peaks in combined periodogram 
     ##############################################################################
     #currently using simple peak finding, could do with refining maybe more variables
-    variables = ['P','a0']
+    variables = ['P','a']
     indices=None
     indices_bin=None
     indices_KO = None
@@ -718,3 +737,238 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,enfnp=0.1):
         indices_full = pf.simple_peaks(full_posteriors, var, maxlivar, numpl, pre_index=indices_full)
             
     ##############################################################################
+    #Get data and calculate dataspan
+    ##############################################################################
+
+    data = pd.read_csv(datafile,header=0,skiprows=[1],names=['times','w','w_err','psi','pf'],sep='\t',usecols=[0,1,2,3,4])
+    dataspan = data.times[len(data.times)-1] - data.times[0]
+
+    data_kepmodel_format = pd.read_csv(datafile,header=0,skiprows=[1],names=['obs_time_tcb','centroid_pos_al','centroid_pos_error_al','scan_pos_angle','parallax_factor_al'],sep='\t',usecols=[0,1,2,3,4])
+
+
+    ##############################################################################
+    #Caluclate FIP
+    ##############################################################################
+
+    fiptip = FIP_TIP(loc, maxNp, P_prior, dataspan)    
+
+    ##############################################################################
+    #Get fit/noise params
+    ##############################################################################
+    round_val = 6
+
+    if res is not None:
+        res_alscan, res_alpha, res_delta = gda.astrometry_residuals(res,pykima_ML)
+    else:
+        res_alscan = 0.0
+    Ndata = len(data)
+    RMS = np.round(np.sqrt(np.sum(np.array(res_alscan)**2)/len(res_alscan)),round_val)
+    Median_err = np.round(np.median(data.w_err),round_val)
+    Mean_err = np.round(np.mean(data.w_err),round_val)
+    scan_angles = data.psi.copy()
+    angle_hist = np.histogram(scan_angles,bins=np.linspace(-np.pi,np.pi,21))[0]
+    fracscanbins = np.sum(angle_hist>0)/20
+    propinmax = np.round(np.max(angle_hist)/Ndata,round_val)
+
+    Nparams = 5
+    if Jitter:
+        Nparams += 1
+    if studentT:
+        Nparams += 1
+    if acceleration:
+        Nparams += 2
+    if jerk:
+        Nparams += 2
+    Nparams += 7*nKOs + 7*numpl
+    if scan_dep_signal:
+        Nparams += n_scan_dep_components*2
+
+    deg_free = Ndata - Nparams
+    Chi_squared = np.round(np.sum((np.array(res_alscan)/np.array(data.w_err))**2),round_val)
+    Chi_squared_red = np.round(np.sum((np.array(res_alscan)/np.array(data.w_err))**2)/deg_free,round_val)
+
+    ML_jitter = np.round(float(MaxLiSolution.jitter),round_val)
+
+    noise_params = [Ndata,np.round(dataspan,round_val),ML_jitter,RMS,Median_err,Mean_err,Chi_squared,Chi_squared_red,fracscanbins,propinmax]
+    noise_params_names = ['# of data = ','dataspan = ', 'MaxLi Jitter = ','Residual RMS = ','Median error = ','Mean error = ',r'$\chi^{2}$ = ',r'$\chi^{2}_{\nu}$ = ',r'Fraction of $\psi$ bins '+'\ncovered = ', r'Proportion of $\psi$ in '+'\nmaximum bin (of 20) = ']
+    
+    if studentT:
+        noise_params.append(float(MaxLiSolution.nu))
+        noise_params_names.append(r'student-t $\nu$ = ')
+
+    ##############################################################################
+    #Orbit SNRs
+    ##############################################################################
+    SNRs = []
+    SNR_names = []
+    for i in range(nKOs):
+        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar),float(MaxLiSolution['M_KO_'+str(i)]),float(MaxLiSolution['KO_P'+str(i)]),float(1000/MaxLiSolution.parallax),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
+        SNRs.append(SNR)
+        SNR_names.append('SNR_KO_'+str(i))
+    
+    for i in range(numpl):
+        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar),float(MaxLiSolution['M_pl_'+str(i)]),float(MaxLiSolution['P'+str(i)]),float(1000/MaxLiSolution.parallax),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
+        SNRs.append(SNR)
+        SNR_names.append('SNR_pl_'+str(i))
+
+    ##############################################################################
+    #Set names and titles for parameters
+    ##############################################################################
+    columns_baseline = ['da','dd','mua','mud','parallax']
+    names_baseline = [r'$\Delta\alpha_{\star}$',r'$\Delta\delta$',r'$\mu_{\alpha_{\star}}$',r'$\mu_{\delta}$',r'$\varpi$']
+    units_baseline = [' [mas]',' [mas]',' [mas/yr]',' [mas/yr]',' [mas]']
+    value_mult = [1.0,1.0,1.0,1.0,1.0]
+    if acceleration:
+        columns_baseline = ['da','dd','mua','mud','accela','acceld','parallax']
+        names_baseline = [r'$\Delta\alpha_{\star}$',r'$\Delta\delta$',r'$\mu_{\alpha_{\star}}$',r'$\mu_{\delta}$',r'$\ddot{\alpha_{\star}}$',r'$\ddot{\delta}$',r'$\varpi$']
+        units_baseline = [' [mas]',' [mas]',' [mas/yr]',' [mas/yr]',r' [mas/yr$^2$]',r' [mas/yr$^2$]',' [mas]']
+        value_mult = [1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+    if jerk:
+        columns_baseline = ['da','dd','mua','mud','accela','acceld','jerka','jerkd','parallax']
+        names_baseline = [r'$\Delta\alpha_{\star}$',r'$\Delta\delta$',r'$\mu_{\alpha_{\star}}$',r'$\mu_{\delta}$',r'$\ddot{\alpha_{\star}}$',r'$\ddot{\delta}$',r'$\dddot{\alpha_{\star}}$',r'$\dddot{\delta}$',r'$\varpi$']
+        units_baseline = [' [mas]',' [mas]',' [mas/yr]',' [mas/yr]',r' [mas/yr$^2$]',r' [mas/yr$^2$]',r' [mas/yr$^3$]',r' [mas/yr$^3$]',' [mas]']
+        value_mult = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+    
+
+    columns_of_KO_interest = ['KO_P','KO_phi','KO_ecc','KO_a','KO_w', 'KO_cosi','KO_W','M_KO_','sma_KO_','KO_inc','KO_Tper']
+    KO_param_names = [r'KO_$P$',r'KO_$\phi$',r'KO_$e$',r'KO_$a$',r'KO_$\omega$',r'KO_$\cos{i}$',r'KO_$\Omega$',r'$M$_KO_',r'$a$_KO_',r'KO_$i$',r'KO_$T_{\rm peri}$']
+    planet_param_names = [r'$P$',r'$\phi$',r'$e$',r'$a$',r'$\omega$',r'$\cos{i}$',r'$\Omega$',r'$M$_pl_',r'$a$_pl_',r'$i$',r'$T_{\rm peri}$']
+    param_units = [' [days]',' [rad]',' ',' [mas]',' [rad]',' ',' [rad]',r' [$M_{\odot}$]',' [AU]',' [deg]',' ']
+
+    ML_param_cols = columns_baseline.copy()
+    ML_param_names = names_baseline.copy()
+    ML_param_units = units_baseline.copy()
+    KO_mass_islow = np.zeros(nKOs)
+    for i in range(nKOs):
+        ML_param_cols += [columns_of_KO_interest[j]+str(i) for j in range(len(columns_of_KO_interest))]
+        ML_param_names += [KO_param_names[j]+str(i) for j in range(len(KO_param_names))]
+        if float(MaxLiSolution['M_KO_'+str(i)]) < 0.06:
+            value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,fcs.Msun/fcs.Mj,1.0,1.0,1.0]
+            units_new = [' [days]',' [rad]',' ',' [mas]',' [rad]',' ',' [rad]',r' [$M_{\rm Jup}$]',' [AU]',' [deg]',' ']
+            ML_param_units += units_new
+            KO_mass_islow[i] = 1
+        else:
+            value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+            ML_param_units += param_units
+    pl_mass_islow = np.zeros(numpl)
+    for i in range(numpl):
+        ML_param_cols += [columns_of_planetary_interest[j]+str(i) for j in range(len(columns_of_planetary_interest))]
+        ML_param_names += [planet_param_names[j]+str(i) for j in range(len(planet_param_names))]
+        if float(MaxLiSolution['M_pl_'+str(i)]) < 0.06:
+            value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,fcs.Msun/fcs.Mj,1.0,1.0,1.0]
+            units_new = [' [days]',' [rad]',' ',' [mas]',' [rad]',' ',' [rad]',r' [$M_{\rm Jup}$]',' [AU]',' [deg]',' ']
+            ML_param_units += units_new
+            pl_mass_islow[i] = 1
+        else:
+            value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+            ML_param_units += param_units
+    
+    ##############################################################################
+    #Make datasheets
+    ##############################################################################
+    mgd.make_baseline_sheet(system, outputloc, posteriors, len_posts, indices, indices_full, posteriors_np, posteriors_single, full_posteriors, nKOs, numpl, BFs_nps, fiptip, res, pykima_ML, MaxLiSolution, ML_param_names, ML_param_cols, ML_param_units, value_mult, dataspan, noise_params, noise_params_names, acceleration, jerk)
+
+    fap = mgd.make_extras_sheet(system,outputloc,posteriors,full_posteriors,indices_full,numpl,data_kepmodel_format,nKOs,star_mass,float(MaxLiSolution.parallax),dataspan,Gaia_epoch)
+
+    logZ = mgd.make_diagnostics_sheet(inputloc,outputloc,system)
+
+    
+    ##############################################################################
+    #Make residuals file
+    ##############################################################################
+    residual_file = data.copy()
+    residual_file['residuals'] = res_alscan
+
+    if studentT:
+        Gd = norm(loc=0, scale=np.hypot(residual_file.w_err, ML_jitter)).pdf(res_alscan)
+        Td = t(df=MaxLiSolution.nu, loc=0, scale=np.hypot(residual_file.w_err, ML_jitter)).pdf(res_alscan)
+        studT_ratios = Td/Gd
+        for j in range(len(Td)):
+            if Td[j] == 0. and Gd[j] == 0.:
+                studT_ratios[j] = 1.
+        residual_file['Tratio'] = studT_ratios
+
+    residual_file.to_csv(outputloc+system+'_4_residuals.csv', index=False)
+
+
+    ##############################################################################
+    #Make a table of parameters
+    ##############################################################################
+    nul='---'
+    param_columns = ['parameter','MaxLi_value','Median_value','+','-','units']
+    params = []
+    params.append(['logZ',logZ,nul,nul,nul,nul])
+    #Add noise/data parameters
+    noise_params_units = [nul,'days','mas','mas','mas','mas',nul,nul,nul,nul]
+    if studentT:
+        noise_params_units.append(nul)
+    param = posteriors['jitter']
+    add_parameter_row(params,MaxLiSolution,param,'jitter','mas')
+    dummy = 0
+    for name,param,unit in zip(noise_params_names,noise_params,noise_params_units):
+        if dummy == 0 or dummy == 1:
+            dummy += 1
+            params.append([name[:-2],param,nul,nul,nul,unit])  
+        elif dummy == 2:
+            dummy = 3
+        else:
+            params.append([name[:-2],param,nul,nul,nul,unit])    
+    #Add planet stats
+    params.append(['number of known-objects',nKOs,nul,nul,nul,nul])
+    params.append(['number of planets',numpl,nul,nul,nul,nul])
+    for i in range(len(SNRs)):
+        params.append([SNR_names[i],SNRs[i],nul,nul,nul,nul])
+    params.append(['Kepmodel peak FAP',fap,nul,nul,nul,nul])
+    for i in range(maxNp):
+        params.append(['Bayes Factor '+str(i+1)+'/'+str(i),Bayes_factors[i],Bayes_factors_samps[i],nul,nul])
+
+    params.append(['','baseline astrometry','','','',''])
+    for variable,units in zip(columns_baseline,units_baseline):
+        param = posteriors[variable]
+        add_parameter_row(params,MaxLiSolution,param,variable,units) 
+
+    if scan_dep_signal:
+        params.append(['','scan-dependent signal','','','',''])
+        for i in range(n_scan_dep_components):
+            variable = 'A'+str(2*i +1)
+            units = 'mas'
+            param = posteriors[variable]
+            add_parameter_row(params,MaxLiSolution,param,variable,units)
+            variable = 'theta'+str(2*i +1)
+            units = 'nul'
+            param = posteriors[variable]
+            add_parameter_row(params,MaxLiSolution,param,variable,units)
+
+    for i in range(nKOs):
+        params.append(['','Known-object_'+str(i),'','','',''])
+        if KO_mass_islow[i]:
+            param = posteriors['M_KO_'+str(i)]*fcs.Msun/fcs.Mj
+            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
+        else:
+            param = posteriors['M_KO_'+str(i)]
+            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        variable_list = ['KO_P'+str(i),'KO_phi'+str(i),'KO_ecc'+str(i),'KO_a'+str(i),'KO_w'+str(i), 'KO_cosi'+str(i),'KO_W'+str(i),'sma_KO_'+str(i),'KO_inc'+str(i),'KO_Tper'+str(i)]
+        units_list = ['days','rad',nul,'mas','rad',nul,'rad','AU','deg',nul]
+        for variable,units in zip(variable_list,units_list):
+            param = posteriors[variable]
+            add_parameter_row(params,MaxLiSolution,param,variable,units) 
+
+    for i in range(numpl):
+        inds = indices[i]
+        params.append(['','Planet_'+str(i),'','','',''])
+        if pl_mass_islow[i]:
+            param = posteriors_single['M_pl_'][inds]*fcs.Msun/fcs.Mj
+            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
+        else:
+            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        variable_list = ['P','phi','ecc','a','w', 'cosi','W','sma_pl_','inc','Tper']
+        units_list = ['days','rad',nul,'mas','rad',nul,'rad','AU','deg',nul]
+        for variable,units in zip(variable_list,units_list):
+            param = posteriors_single[variable][inds]
+            add_parameter_row(params,MaxLiSolution,param,variable+str(i),units) 
+
+    parameters = pd.DataFrame(params,columns=param_columns)
+    parameters.to_csv(outputloc+system+'_5_parameters.csv', index=False)
+
+def add_parameter_row(params,MaxLiSolution,param,variable,units,dps=8):
+    params.append([variable,np.round(float(MaxLiSolution[variable]),dps),np.round(np.percentile(param,50),dps),np.round(np.percentile(param,84)-np.percentile(param,50),dps),np.round(np.percentile(param,50)-np.percentile(param,16),dps),units])

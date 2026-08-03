@@ -226,7 +226,7 @@ def plot_observation_coverage(ax,orbit,obsrange,colour='purple',alpha=0.4):
     else:
         xax2 = np.arange(0,1,0.01)   
         ax.plot(xax2,orbit.RV_keplerian_add(xax2,phase=True),c='purple',alpha=0.4,linewidth=12)
-    
+
 
 def plot_detection_limit(ax,posterior_file,KM='K',M_central=1.,colourmap='Greys',detlim_col='purple',numbins=50,lowlim=-1,uplim=None,label='',perc=99,m_unit='Earth'):
     '''

@@ -150,7 +150,7 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
 
     return posterior_file
 
-def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_prior=[10,4000]):
+def add_columns_Gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_prior=[10,4000]):
         
     #get mass of central star
     N = len(posterior_file)
@@ -166,8 +166,9 @@ def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
 
     for i in range(nKOs):
         #calculate the mass of any additional known objects
-        posterior_file['M_KO_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['KO_P'+str(i)],posterior_file['KO_a0'+str(i)],Minterior,posterior_file['parallax'])
-        posterior_file['sma_KO'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],Minterior,posterior_file['M_KO_'+str(i)])[1]
+        posterior_file['M_KO_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['KO_P'+str(i)],posterior_file['KO_a'+str(i)],Minterior,posterior_file['parallax'])
+        posterior_file['sma_KO_'+str(i)] = fcs.sma_2body(posterior_file['KO_P'+str(i)],Minterior,posterior_file['M_KO_'+str(i)])[1]
+        posterior_file['KO_inc'+str(i)] = np.arccos(posterior_file['KO_cosi'+str(i)])*180/np.pi
         posterior_file['KO_Tper'+str(i)] = posterior_file['Epoch'] - posterior_file['KO_P'+str(i)]*posterior_file['KO_phi'+str(i)]/2/np.pi
         if np.mean(posterior_file['KO_P'+str(i)]) < P_prior[0]:
             Minterior += posterior_file['M_KO_'+str(i)]
@@ -175,8 +176,9 @@ def add_columns_gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
         #get indices of where no planet is found for this column to make the masses zero
         isplanet = posterior_file['P'+str(i)]>0.0
         #calculate the mass of any additional known objects
-        posterior_file['M_pl_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file['a0'+str(i)],Minterior,posterior_file['parallax'])*isplanet
-        posterior_file['sma_pl'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_'+str(i)])[1]*isplanet
+        posterior_file['M_pl_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file[''+str(i)],Minterior,posterior_file['parallax'])*isplanet
+        posterior_file['sma_pl_'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_pl_'+str(i)])[1]*isplanet
+        posterior_file['inc'+str(i)] = np.arccos(posterior_file['cosi'+str(i)])*180/np.pi
         Tpers = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi
         posterior_file['Tper'+str(i)] = Tpers*isplanet
     

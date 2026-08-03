@@ -25,7 +25,7 @@ Mj = constants.M_jup.value
 
 colours = ['r','b','g','m','c','darkviolet','orange','cornflowerblue','indianred','forestgreen','black','black','black','black','black','black','black','black','black']
 
-def make_binary_sheet(system,outputloc,posteriors, len_posts, indices,indices_bin,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
+def make_binary_sheet(system,outputloc, posteriors, len_posts, indices,indices_bin,full_posteriors,numpl,BFs_nps,MaxLiSolution,pri_data_list,sec_data_list=[],binary=False,SB2=False,full_sample=None,precession=False):
     
     fig = plt.figure(constrained_layout=True)
     

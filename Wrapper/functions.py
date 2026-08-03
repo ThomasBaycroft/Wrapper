@@ -11,6 +11,7 @@ import scipy as sp
 from astropy import constants
 from PyAstronomy.pyTiming import pyPeriod
 import pandas as pd
+import os
 
 pi = np.pi
 c = constants.c.value
@@ -520,6 +521,11 @@ def sma_2body(P,M0,M1):
     a0 = a_tot*M1/(M0+M1)
     a1 = a_tot-a0
     return a0,a1
+
+SS_names = ['Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune']
+SS_masses = np.array([3.285*10**23,4.86732*10**24,Me,6.39*10**23,Mj,Msat,8.681*10**25,Mnep])
+SS_periods = np.array([87.969,224.701,365.25,686.980,4332.589,10759.22,30688.5,60182])
+SS_smas = sma_2body(SS_periods,1,SS_masses/Msun)[1]
 
 def P_from_sma(a,M0,M1=0):
     '''
@@ -1800,8 +1806,55 @@ def NG_stab_acrit_outer(Xo,ab):
     return ab*10**Yo,ab*10**YoP - ab*10**Yo,ab*10**Yo - ab*10**YoM
 
 ######################################
-#Lombe-Scargle
+#Periodograms
 ######################################
+
+def gaia_astrometric_window_function(freqs, times, scan_angles):
+    """
+    Calculates the 2D directional spectral window function for Gaia astrometry.
+    Based on the astrometric periodogram formalisms (e.g., Pelat et al. 2007).
+
+    Generated with the help of Google AI based on the 1-D spectral window function below
+    
+    Parameters
+    ----------
+    freqs : array_like
+        1D array of test frequencies.
+    times : array_like
+        1D array of observation times (BJD/TCB).
+    scan_angles : array_like
+        1D array of scan angles (psi) in radians for each observation time.
+    
+    Returns
+    -------
+    w_alpha : array_like
+        The window function power projected along Right Ascension.
+    w_delta : array_like
+        The window function power projected along Declination.
+    """
+    #Ensure np arrays
+    freqs = np.array(freqs)
+    times = np.array(times)
+    scan_angles = np.array(scan_angles)
+
+    # Reshape arrays for broadcasting: freqs becomes (M, 1), times becomes (1, N)
+    f_mesh = freqs[:, np.newaxis]
+    t_mesh = times[np.newaxis, :]
+    
+    # Calculate the standard complex exponential phase matrix (Shape: M, N)
+    phase_matrix = np.exp(-2j * np.pi * f_mesh * t_mesh)
+    
+    # Weight the phases by the directional geometry of the scans
+    # Gaia measures along-scan: sin(psi) for RA*, cos(psi) for Dec
+    weight_alpha = np.sin(scan_angles)
+    weight_delta = np.cos(scan_angles)
+    
+    # Compute the window function vectors
+    w_alpha = np.sum(phase_matrix * weight_alpha, axis=1) / len(times)
+    w_delta = np.sum(phase_matrix * weight_delta, axis=1) / len(times)
+    
+    return np.abs(w_alpha), np.abs(w_delta)
+
 
 
 def get_spectral_window_function(freqs, times):
@@ -1896,6 +1949,28 @@ def chi2_red(resids,errs,numparams):
 #################################################
 #Other Functions
 #################################################
+
+def write_gaia_datafile(loc,name,times,w,wsig,psi,pf):
+    w = w[np.argsort(times)]
+    wsig = wsig[np.argsort(times)]
+    psi = psi[np.argsort(times)]
+    pf= pf[np.argsort(times)]
+    times = np.sort(times)
+    with open(os.path.join(loc,name),'w') as f:
+        f.write('obs_time_tcb\tcentroid_pos_al\tcentroid_pos_error_al\tscan_pos_angle\tparallax_factor_al\n')
+        f.write('------------\t---------------\t---------------------\t--------------\t------------------\n')
+        for i in range(len(times)):
+            f.write('{0:.8f}\t{1:.8f}\t{2:.8f}\t{3:.8f}\t{4:.8f}\n'.format(float(times[i]),float(w[i]),float(wsig[i]),float(psi[i]),float(pf[i])))
+
+def write_rv_datafile(loc,name,times,rvs,rverrs):
+    rvs = rvs[np.argsort(times)]
+    rverrs = rverrs[np.argsort(times)]
+    times = np.sort(times)
+    with open(os.path.join(loc,name),'w') as f:
+        f.write('bjd\tvrad\tsvrad\n')
+        f.write('---\t----\t-----\n')
+        for i in range(len(times)):
+            f.write('{0:.8f}\t{1:.8f}\t{2:.8f}\n'.format(float(times[i]),float(rvs[i]),float(rverrs[i])))
 
 def read_posterior_samples(loc):
     try:
