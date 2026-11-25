@@ -6,6 +6,7 @@ Wrapper/__init__.py
 Wrapper/compare_models.py
 Wrapper/functions.py
 Wrapper/make_datasheets.py
+Wrapper/make_gaia_datasheets.py
 Wrapper/make_plots.py
 Wrapper/orbit_plot.py
 Wrapper/peak_finder.py

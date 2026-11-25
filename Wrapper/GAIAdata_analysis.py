@@ -358,7 +358,7 @@ def kepmodel_analysis_periodogram(gaia_data,gaia_epoch_tcb = 2457936.875,Pmin = 
     return P, power, kmax, fap
 
 
-def kepmodel_analysis_parameters(gaia_data,gaia_epoch_tcb=2457936.875,max_harmonics=0,max_degree_accel=0,Pmin=0.95,Pmax=10000,nfreq=50000,fap_threshold=0.001):
+def kepmodel_analysis_parameters(gaia_data,gaia_epoch_tcb=2457936.875,max_harmonics=0,max_degree_accel=0,Pmin=0.95,Pmax=100000,nfreq=50000,fap_threshold=0.001):
     # Initialize model
     cos_theta = np.cos(gaia_data.scan_pos_angle.values)
     sin_theta = np.sin(gaia_data.scan_pos_angle.values)

@@ -699,6 +699,8 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
             mask = np.logical_and(mask,res.sample.T[res.indices['planets.e']][i] < emax)
     
     MaxLiSolution = posts[posts['logL']==max(posts['logL'])].head(1)
+
+    # MaxLiSolution['Mstar'] = np.mean(posteriors.Mstar) #enforce ML star mass to be the mean value of distribution
     
     if res is not None:
         if numpl>=1:
@@ -921,6 +923,11 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     params.append(['Kepmodel peak FAP',fap,nul,nul,nul,nul])
     for i in range(maxNp):
         params.append(['Bayes Factor '+str(i+1)+'/'+str(i),Bayes_factors[i],Bayes_factors_samps[i],nul,nul])
+
+    params.append(['','Star parameters','','','',''])
+    for variable,units in zip(['Mstar'],['M_sun']):
+        param = posteriors[variable]
+        add_parameter_row(params,MaxLiSolution,param,variable,units) 
 
     params.append(['','baseline astrometry','','','',''])
     for variable,units in zip(columns_baseline,units_baseline):

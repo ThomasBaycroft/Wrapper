@@ -61,6 +61,9 @@ def add_columns_RV(posterior_file,epoch,binary,Precession,SB2,nKOs,maxNp,star_ma
             K2s = np.random.randn(len(posterior_file))*K2[1] + K2[0]
             q = posterior_file['KO_K0']/K2s/1000
             SB2 = True
+        if np.max(sini) - np.min(sini) > 0.6:
+            sini *= 0 
+            sini += 1
 
         
         #centre angles calculate the time of periastron for the binary
@@ -176,7 +179,7 @@ def add_columns_Gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
         #get indices of where no planet is found for this column to make the masses zero
         isplanet = posterior_file['P'+str(i)]>0.0
         #calculate the mass of any additional known objects
-        posterior_file['M_pl_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file[''+str(i)],Minterior,posterior_file['parallax'])*isplanet
+        posterior_file['M_pl_'+str(i)] = fcs.get_mass_AST_scp(posterior_file['P'+str(i)],posterior_file['a'+str(i)],Minterior,posterior_file['parallax'])*isplanet
         posterior_file['sma_pl_'+str(i)] = fcs.sma_2body(posterior_file['P'+str(i)],Minterior,posterior_file['M_pl_'+str(i)])[1]*isplanet
         posterior_file['inc'+str(i)] = np.arccos(posterior_file['cosi'+str(i)])*180/np.pi
         Tpers = posterior_file['Epoch'] - posterior_file['P'+str(i)]*posterior_file['phi'+str(i)]/2/np.pi

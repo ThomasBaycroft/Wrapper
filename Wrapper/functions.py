@@ -23,7 +23,11 @@ Msun = constants.M_sun.value
 Mj = constants.M_jup.value
 Me = constants.M_earth.value
 Mnep = 1.0241*10**(26)
+Mur = 8.681*10**(25)
 Msat = 5.68319*10**(26)
+Mvenus = 4.8673*(10**24)
+Mmars = 6.4169*(10**23)
+Mmerc = 3.30104*(10**23)
 Re = constants.R_earth.value
 Rj = constants.R_jup.value
 
@@ -116,7 +120,7 @@ def mean_anom(f,e):
     '''
     calculate mean anomaly from the true anomaly
     '''
-    E = 2. * np.arctan( np.sqrt((1.-e)/(1.+e)) * np.tan(f/2.))
+    E = 2. * np.arctan2(np.sqrt((1.-e))*np.sin(f/2.) , np.sqrt((1.+e)) * np.cos(f/2.))
 
     M = E - e*np.sin(E)
     return M
@@ -125,7 +129,7 @@ def M_from_f(f,e):
     '''
     Calculate the mean anomaly from the true anomaly
     '''
-    E = 2. * np.arctan( np.sqrt((1.-e)/(1.+e)) * np.tan(f/2.))
+    E = 2. * np.arctan2(np.sqrt((1.-e))*np.sin(f/2.) , np.sqrt((1.+e)) * np.cos(f/2.))
     M = E - e*np.sin(E)
     return M
 
@@ -708,8 +712,8 @@ def wdot_rot(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1):
         M1: Mass of secondary (M_sun)
         e1: eccentricity of inner orbit
         P1: orbital period of inner orbit (days)
-        k0: second Love number for the primary body
-        k1: second Love number for the secondary body
+        k0: second Love number for the primary body (2x classical apsidal constant)
+        k1: second Love number for the secondary body (2x classical apsidal constant)
         Omega0: rotation rate of primary body (rad/s)
         Omega1: rotation rate of secondary body (rad/s)
         R0: Radius of primary (R_sun)
@@ -744,8 +748,8 @@ def wdot_rot_full(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1,I,Omega,eps0,eps1,phi0,p
         M1: Mass of secondary (M_sun)
         e1: eccentricity of inner orbit
         P1: orbital period of inner orbit (days)
-        k0: second Love number for the primary body
-        k1: second Love number for the secondary body
+        k0: second Love number for the primary body (2x classical apsidal constant)
+        k1: second Love number for the secondary body (2x classical apsidal constant)
         Omega0: rotation rate of primary body (rad/s)
         Omega1: rotation rate of secondary body (rad/s)
         R0: Radius of primary (R_sun)
@@ -794,15 +798,15 @@ def wdot_rot_full(M0,M1,e1,P1,k0,k1,Omega0,Omega1,R0,R1,I,Omega,eps0,eps1,phi0,p
 
 
 def wdot_spin_maxneg(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc):
-    '''
+    ''' !!maybe incorrect, need to check for non-eclipsing configuration, for eclipsing use function below!!
     Calculate the maximum retrograde rate of apsidal precession of an orbit due to 
     misaligned spins given:
         M0: Mass of primary (M_sun)
         M1: Mass of secondary (M_sun)
         e: eccentricity of inner orbit
         P: orbital period of inner orbit (days)
-        k0: apsidal constant for the primary body
-        k1: apsidal constant for the secondary body
+        k0: apsidal constant for the primary body (classical apsidal constant)
+        k1: apsidal constant for the secondary body (classical apsidal constant)
         Omega0: rotation rate of primary body (rad/s)
         Omega1: rotation rate of secondary body (rad/s)
         inc: inclination of the orbit relative to the observer
@@ -815,11 +819,11 @@ def wdot_spin_maxneg(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc):
     r1 = R1*Rsun/(a*AU)
     wbar = 2*np.pi/(P*24*3600)
     sini = np.sin(inc)
-    wdot = -5*wbar/sini/sini/((1-e**2)**2)*(k0*r0**5*(Omega0/wbar)**2*(1+M1/M0) + k1*r1**5*(Omega1/wbar)**2*(1+M0/M1))
+    wdot = -wbar/sini/sini/((1-e**2)**2)*(k0*r0**5*(Omega0/wbar)**2*(1+M1/M0) + k1*r1**5*(Omega1/wbar)**2*(1+M0/M1))
     wdot *= 180/np.pi*3600*3600*24*365.25
     return wdot
 
-def wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2):
+def wdot_spin_maxneg_eclipsing(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1):
     '''
     Calculate the maximum retrograde rate of apsidal precession of an orbit due to 
     misaligned spins given:
@@ -827,14 +831,43 @@ def wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2)
         M1: Mass of secondary (M_sun)
         e: eccentricity of inner orbit
         P: orbital period of inner orbit (days)
-        k0: apsidal constant for the primary body
-        k1: apsidal constant for the secondary body
+        k0: apsidal constant for the primary body (classical apsidal constant)
+        k1: apsidal constant for the secondary body (classical apsidal constant)
         Omega0: rotation rate of primary body (rad/s)
         Omega1: rotation rate of secondary body (rad/s)
         inc: inclination of the orbit relative to the observer
         R0: Radius of primary (R_sun)
         R1: Radius of secondary (R_sun)
         a: semi-major axis of orbit (AU)
+    Returns rate of precession in arcsec/yr
+    '''
+    r0 = R0*Rsun/(a*AU)
+    r1 = R1*Rsun/(a*AU)
+    wbar = 2*np.pi/(P*24*3600)
+    wdot = -wbar/((1-e**2)**2)*(k0*r0**5*(Omega0/wbar)**2*(1+M1/M0) + k1*r1**5*(Omega1/wbar)**2*(1+M0/M1))
+    wdot *= 180/np.pi*3600*3600*24*365.25
+    return wdot
+
+def wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2):
+    '''
+    Calculate the rate of apsidal precession of an orbit due to
+    misaligned spins given: (from Claret et al. 2010)
+        M0: Mass of primary (M_sun)
+        M1: Mass of secondary (M_sun)
+        e: eccentricity of inner orbit
+        P: orbital period of inner orbit (days)
+        R0: Radius of primary (R_sun)
+        R1: Radius of secondary (R_sun)
+        a: semi-major axis of orbit (AU)
+        Omega0: rotation rate of primary body (rad/s)
+        Omega1: rotation rate of secondary body (rad/s)
+        k0: apsidal constant for the primary body  (classical apsidal constant, not 2x like some other equations)
+        k1: apsidal constant for the secondary body (classical apsidal constant, not 2x like some other equations)
+        inc: inclination of the orbit relative to the observer
+        cosa1: cosine of angle between stellar rotation axis and orbital angular momentum (star 1)
+        cosa2: cosine of angle between stellar rotation axis and orbital angular momentum (star 2)
+        cosb1: cosine of angle between stellar rotation axis and line-of-sight (star 1)
+        cosb2: cosine of angle between stellar rotation axis and line-of-sight (star 2)
     Returns rate of precession in arcsec/yr
     '''
     r0 = R0*Rsun/(a*AU)
@@ -850,14 +883,14 @@ def wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2)
 
 def Wdot_spin(M0,M1,e,P,R0,R1,a,Omega0,Omega1,k0,k1,inc,cosa1,cosa2,cosb1,cosb2):
     '''
-    Calculate the maximum retrograde rate of apsidal precession of an orbit due to 
+    Calculate the rate of nodal precession of an orbit due to 
     misaligned spins given:
         M0: Mass of primary (M_sun)
         M1: Mass of secondary (M_sun)
         e: eccentricity of inner orbit
         P: orbital period of inner orbit (days)
-        k0: apsidal constant for the primary body
-        k1: apsidal constant for the secondary body
+        k0: apsidal constant for the primary body (2x classical apsidal constant)
+        k1: apsidal constant for the secondary body (2x classical apsidal constant)
         Omega0: rotation rate of primary body (rad/s)
         Omega1: rotation rate of secondary body (rad/s)
         inc: inclination of the orbit relative to the observer
@@ -1132,6 +1165,20 @@ def delt_wdot(P,e,w0,wdot,time):
 
     return off2 - off1
 
+#################################################
+#Tides
+#################################################
+
+def cirularisation_1(M1,M2,R1,R2,P,Q1,Q2):
+    '''
+    Tidal circularisation timescale given a fixed tidal quality factor
+    and a planetary companion, likely applicable to binary with severe mass ratio
+    '''
+    a = sma_tot(P,M1,M2)
+
+    ededt = - ((63/4)*(G*(M1*Msun)**3)**(1/2)*(R2*Rsun)**5/(M2*Msun*Q2) + (171/16)*(G/(M1*Msun))**(1/2)*(R1*Rsun)**5*(M2*Msun/Q1) )*(a*AU)**(-13/2)
+    tcirc = -1/ededt
+    return tcirc/(3600*24*365.25)
 
 #################################################
 #astrometry functions
@@ -1346,6 +1393,16 @@ def astrometric_SNR(M0,M1,P,dist,Beta=0,Nobs=70,sigma=30):
     f = M1/(M0+M1)
     alpha = arel*(f-Beta)
 
+    SNR = alpha*(Nobs**0.5)/sigma
+    return SNR
+
+def astrometric_SNR_from_a(alpha,Nobs=70,sigma=30):
+    '''
+    Gives the signal-noise ratio of an astrometric orbit as detectable in Gaia for a binary/exoplanetary orbit. Following the equations in Sahlmann, Triaud, and Martin 2015.
+        alpha: astrometric semi-major axis (mas)
+        Nobs: number of Gaia observations (default 70)
+        sigma: precision of individual epoch measurments (micro-arcseconds) default 30
+    '''
     SNR = alpha*(Nobs**0.5)/sigma
     return SNR
 
@@ -1972,6 +2029,18 @@ def write_rv_datafile(loc,name,times,rvs,rverrs):
         for i in range(len(times)):
             f.write('{0:.8f}\t{1:.8f}\t{2:.8f}\n'.format(float(times[i]),float(rvs[i]),float(rverrs[i])))
 
+def write_rv_datafile_sb2(loc,name,times,rvs1,rverrs1,rvs2,rverrs2):
+    rvs1 = rvs1[np.argsort(times)]
+    rverrs1 = rverrs1[np.argsort(times)]
+    rvs2 = rvs2[np.argsort(times)]
+    rverrs2 = rverrs2[np.argsort(times)]
+    times = np.sort(times)
+    with open(os.path.join(loc,name),'w') as f:
+        f.write('bjd\tvrad1\tsvrad1\tvrad2\tsvrad2\n')
+        f.write('---\t-----\t------\t-----\t------\n')
+        for i in range(len(times)):
+            f.write('{0:.8f}\t{1:.8f}\t{2:.8f}\t{3:.8f}\t{4:.8f}\n'.format(float(times[i]),float(rvs1[i]),float(rverrs1[i]),float(rvs2[i]),float(rverrs2[i])))
+
 def read_posterior_samples(loc):
     try:
         posts = pd.read_csv(loc+'posterior_file.csv')
@@ -2077,7 +2146,15 @@ def dms_to_deg(d,m,s):
     degs = d + m/60 + s/3600
     return degs
 
+def deg_to_dms(degs):
+    d = np.floor(degs)
+    m = np.floor((degs-d)*60)
+    s = (degs - d - m/60)*3600
+    return d,m,s
+
 def deg_to_hms(degs):
     secs = degs/360*3600*24
     h = np.floor(secs/3600)
-    m = np.floor()
+    m = np.floor((secs-h*3600)/60)
+    s = secs-h*3600-m*60
+    return h,m,s
