@@ -56,7 +56,7 @@ class GAIAdata:
         
         for i in range(numpl):
             if Tpers:
-                sample['Tper'+str(i)] = self.t_ref - float(sample['P'+str(i)])*float(sample['phi'+str(i)])/2/np.pi
+                sample['Tper'+str(i)] = self.t_ref - float(np.asarray(sample['P'+str(i)]).item())*float(np.asarray(sample['phi'+str(i)]).item())/2/np.pi
             # print(sample[['P'+str(i),'a0'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i),'cosi'+str(i),'W'+str(i)]].values.tolist()[0])
             self.planet_orbits.append(orbit(sample[['P'+str(i),'a0'+str(i),'Tper'+str(i),'ecc'+str(i),'w'+str(i),'cosi'+str(i),'W'+str(i)]].values.tolist()[0]))
     

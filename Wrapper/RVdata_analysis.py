@@ -89,7 +89,7 @@ class RV_planets:
         scaling=1.0
         if units == 'kms':
             scaling=1000
-        self.vsys = float(vsys*scaling)
+        self.vsys = float(np.asarray(vsys).item())*scaling
         self.num_params+=1
         
     def add_offset(self,offset,units='ms'):
@@ -97,11 +97,11 @@ class RV_planets:
         if units == 'kms':
             scaling=1000
         # print(self.inst_name,float(offset),float(offset)*scaling,self.vrad[0])
-        self.vrad -= float(offset)*scaling
+        self.vrad -= float(np.asarray(offset).item())*scaling
         self.num_params+=1
         
     def add_jitter(self,jitter):
-        self.jitter = float(jitter)
+        self.jitter = float(np.asarray(jitter).item())
         self.num_params+=1
         
         
@@ -156,7 +156,7 @@ class RV_planets:
         self.drift_order = order
         var=['slope','quadr','cubic']
         for i in range(order):
-            self.drift_params.append(float(params[var[i]]))
+            self.drift_params.append(float(np.asarray(params[var[i]]).item()))
         for i in range(order,3):
             self.drift_params.append(0)
         

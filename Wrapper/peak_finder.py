@@ -32,7 +32,7 @@ def simple_peaks(posteriors,var,maxlivars,numpl,sensitivity=4,pre_index=None):
             posteriors = posts[pre_index[i]]
         # maxliind = np.argmax(posteriors['logL'])
         # maxlivar = posteriors[var][maxliind]
-        maxlivar = float(maxlivars[i])
+        maxlivar = float(np.asarray(maxlivars[i]).item())  # maxlivars[i] may be a float or a one-element Series
         
         lower,upper = min(posteriors[var]),max(posteriors[var])
         

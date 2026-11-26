@@ -71,7 +71,7 @@ def make_binary_sheet(system,outputloc, posteriors, len_posts, indices,indices_b
     BFs = BFs_nps[0]
     Nps = BFs_nps[1]
     BFsamps = BFs_nps[2]
-    maxNp = int(posteriors['maxNp'][0])
+    maxNp = int(posteriors['maxNp'].iloc[0])
     
     ax5 = plt.subplot(gs2[0,0])
     #setup the bins for the Np histogram, centered on integers
@@ -105,7 +105,7 @@ def make_binary_sheet(system,outputloc, posteriors, len_posts, indices,indices_b
     ax6.semilogx()
     ax6.grid(True)
     if binary:
-        ax6.axvline(fcs.get_HW_stab(float(MaxLiSolution.M_pri), float(MaxLiSolution.M_sec), float(MaxLiSolution.KO_P0), float(MaxLiSolution.KO_ecc0)),c='orange',ls='--',label='HW stability limit')
+        ax6.axvline(fcs.get_HW_stab(float(MaxLiSolution.M_pri.iloc[0]), float(MaxLiSolution.M_sec.iloc[0]), float(MaxLiSolution.KO_P0.iloc[0]), float(MaxLiSolution.KO_ecc0.iloc[0])),c='orange',ls='--',label='HW stability limit')
     ax6.axvline(365,c='r', label='1 year')
     ax6.axvline(dataspan,c='g', label='dataspan')
     toplim = ax6.axes.get_ylim()[1]
@@ -132,7 +132,7 @@ def make_binary_sheet(system,outputloc, posteriors, len_posts, indices,indices_b
         
         texty = 'Maximum Likelihood Parameters:\n'
         for i,col in enumerate(parameter_cols):
-            texty+= parameter_names[i]+str(float(MaxLiSolution[col]))+parameter_units[i]+'\n'
+            texty+= parameter_names[i]+str(float(MaxLiSolution[col].iloc[0]))+parameter_units[i]+'\n'
         ax7.text(0.,0.,texty)
     
     ax8 = plt.subplot(gs3[1,0])
@@ -254,7 +254,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     s = str(object_number)
     parameter_names = [r'$P$ = ',r'$K$ = ',r'$e$ = ',r'$\omega$ = ',r'$m\sin(i)$ = ',r'$a$ = ',r'$T_{per}$ = ',r'$V_{sys} = $']
-    if float(MaxLiSolution['M_pl_'+s]) >= 0.08:
+    if float(MaxLiSolution['M_pl_'+s].iloc[0]) >= 0.08:
         parameter_cols = ['P'+s,'K'+s,'ecc'+s,'w'+s,'M_pl_'+s,'a_pl_'+s,'Tper'+s,'vsys']
         parameter_units = [' days',' m/s',' ',' rad',r' $M_{\odot}$',' AU',' ',' days','m/s']
     else:
@@ -269,7 +269,7 @@ def make_object_sheet(system,outputloc,Known_object,object_number,sheet_number,p
     
     texty = 'Maximum Likelihood Parameters:\n'
     for i,col in enumerate(parameter_cols):
-        texty+= parameter_names[i]+str(float(MaxLiSolution[col]))+parameter_units[i]+'\n'
+        texty+= parameter_names[i]+str(float(MaxLiSolution[col].iloc[0]))+parameter_units[i]+'\n'
     ax7.text(0.,0.,texty)
     
     
@@ -378,23 +378,23 @@ def make_timeseries_sheet(system,outputloc,sheet_number,instruments,MaxLiSolutio
     Tpers,pl_Ps,pl_Ms,pl_es,pl_ws = [], [], [], [], []
 
     for i in range(1,nKOs):
-        pl_Ps.append(float(MaxLiSolution['KO_P'+str(i)]))
-        pl_Ms.append(float(MaxLiSolution['M_KO_'+str(i)]))
-        pl_es.append(float(MaxLiSolution['KO_ecc'+str(i)]))
-        pl_ws.append(float(MaxLiSolution['KO_w'+str(i)]))
-        Tpers.append(float(MaxLiSolution['KO_Tper'+str(i)]))
+        pl_Ps.append(float(MaxLiSolution['KO_P'+str(i)].iloc[0]))
+        pl_Ms.append(float(MaxLiSolution['M_KO_'+str(i)].iloc[0]))
+        pl_es.append(float(MaxLiSolution['KO_ecc'+str(i)].iloc[0]))
+        pl_ws.append(float(MaxLiSolution['KO_w'+str(i)].iloc[0]))
+        Tpers.append(float(MaxLiSolution['KO_Tper'+str(i)].iloc[0]))
     for i in range(numpl):
-        pl_Ps.append(float(MaxLiSolution['P'+str(i)]))
-        pl_Ms.append(float(MaxLiSolution['M_pl_'+str(i)]))
-        pl_es.append(float(MaxLiSolution['ecc'+str(i)]))
-        pl_ws.append(float(MaxLiSolution['w'+str(i)]))
-        Tpers.append(float(MaxLiSolution['Tper'+str(i)]))
+        pl_Ps.append(float(MaxLiSolution['P'+str(i)].iloc[0]))
+        pl_Ms.append(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]))
+        pl_es.append(float(MaxLiSolution['ecc'+str(i)].iloc[0]))
+        pl_ws.append(float(MaxLiSolution['w'+str(i)].iloc[0]))
+        Tpers.append(float(MaxLiSolution['Tper'+str(i)].iloc[0]))
     
     plot = False
     if binary:
         plot = True
-        Bin_P,M1,M2,Bin_e,Bin_w = float(MaxLiSolution['KO_P0']),float(MaxLiSolution['M_pri']),float(MaxLiSolution['M_sec']),float(MaxLiSolution['KO_ecc0']),float(MaxLiSolution['KO_w0'])
-        Tpers = [float(MaxLiSolution['Tper_bin']),float(MaxLiSolution['Tper_bin'])]+Tpers
+        Bin_P,M1,M2,Bin_e,Bin_w = float(MaxLiSolution['KO_P0'].iloc[0]),float(MaxLiSolution['M_pri'].iloc[0]),float(MaxLiSolution['M_sec'].iloc[0]),float(MaxLiSolution['KO_ecc0'].iloc[0]),float(MaxLiSolution['KO_w0'].iloc[0])
+        Tpers = [float(MaxLiSolution['Tper_bin'].iloc[0]),float(MaxLiSolution['Tper_bin'].iloc[0])]+Tpers
         op.plot_circumbinary(Bin_P, M1, M2, Bin_e, Bin_w, pl_Ps, pl_Ms, pl_es, pl_ws,timeseries=times,tpers=Tpers,SB2=SB2,ax=ax2,fig=fig)
     else:
         if numpl >= 1 or nKOs >=1:
@@ -434,9 +434,9 @@ def make_extras_sheet(system,outputloc,sheet_number,full_posteriors,indices,MaxL
     
     posts_C = full_posteriors[no_pl_ind]
     
-    M_central = float(MaxLiSolution.M_pri)
+    M_central = float(MaxLiSolution.M_pri.iloc[0])
     if binary:
-        M_central+=float(MaxLiSolution.M_sec)
+        M_central+=float(MaxLiSolution.M_sec.iloc[0])
     
     mplt.plot_detection_limit(ax1, posts_C,M_central=M_central,KM='K')
     
@@ -656,7 +656,7 @@ def write_footer_text(ax,posteriors,len_posts,numpl,MaxLiSample,pri_data_list,se
     texty1+='# samples = '+str(len_posts) +'\n'
     texty1+='# Np samples = '+str(int(len(posteriors)/max(numpl,1))) +'\n'
     try:
-        nu = str(round(float(MaxLiSample.nu),1))
+        nu = str(round(float(MaxLiSample.nu.iloc[0]),1))
         texty1 += 'nu = '+nu+'\n'
     except:
         pass

@@ -29,9 +29,9 @@ class ET_planets():
         
     def add_ephemeris(self,ephem1,ephem2=0,ephem3=0):
         
-        self.ephem1 = float(ephem1)
-        self.ephem2 = float(ephem2)
-        self.ephem3 = float(ephem3)
+        self.ephem1 = float(np.asarray(ephem1).item())
+        self.ephem2 = float(np.asarray(ephem2).item())
+        self.ephem3 = float(np.asarray(ephem3).item())
     
     def add_keplerians(self, numpl,params):
         

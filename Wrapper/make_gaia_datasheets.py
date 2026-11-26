@@ -42,7 +42,7 @@ def make_baseline_sheet(system, outputloc, posteriors, len_posts, indices, indic
 
     texty = 'Maximum Likelihood Parameters:\n'
     for i,col in enumerate(ML_param_cols):
-        texty+= ML_param_names[i]+ML_param_units[i]+' = '+str(round(float(MaxLiSolution[col])*value_mult[i],6))+'\n'
+        texty+= ML_param_names[i]+ML_param_units[i]+' = '+str(round(float(MaxLiSolution[col].iloc[0])*value_mult[i],6))+'\n'
     ax4.text(0.,1.,texty,va='top',fontsize='large')
 
     #NoiseParams box
@@ -59,7 +59,7 @@ def make_baseline_sheet(system, outputloc, posteriors, len_posts, indices, indic
     BFs = BFs_nps[0]
     Nps = BFs_nps[1]
     BFsamps = BFs_nps[2]
-    maxNp = int(posteriors['maxNp'][0])
+    maxNp = int(posteriors['maxNp'].iloc[0])
     
     ax1 = plt.subplot(gs[:2,:3])
     #setup the bins for the Np histogram, centered on integers

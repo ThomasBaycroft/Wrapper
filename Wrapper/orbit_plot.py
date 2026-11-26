@@ -81,7 +81,7 @@ def plot_orbits(Masses,Periods,eccs,omegas,ax=None,fig=None,circumbinary=False,S
             if i == start:
                 fig.colorbar(c, label='bjd')
     if circumbinary:
-        ax.plot(np.linspace(0,2*np.pi,100),np.ones(100)*float(HWstab),ls='--',c='grey')
+        ax.plot(np.linspace(0,2*np.pi,100),np.ones(100)*float(np.asarray(HWstab).item()),ls='--',c='grey')
             
 
     ax.set_rmin(0)
@@ -291,11 +291,11 @@ def transitability_pred_posts(loc,start_time,num=100,cluster=True):
     t0,t1=[],[]
     
     for i in rand:
-        bin_params = posts.loc[i][['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']]
+        bin_params = posts.loc[i][['M_pri','M_sec','KO_P0','KO_ecc0','Tper_bin','KO_w0','KO_wdot0']].values
         if cluster:
-            pl_params = posts.loc[i][['M_pl_','P','ecc','Tper','w']]
+            pl_params = posts.loc[i][['M_pl_','P','ecc','Tper','w']].values
         else:
-            pl_params = posts.loc[i][['M_pl_0','P0','ecc0','Tper0','w0']]
+            pl_params = posts.loc[i][['M_pl_0','P0','ecc0','Tper0','w0']].values
         epoch = posts.loc[i].Epoch
         tims = transitability_pred(bin_params, pl_params, start_time, epoch,ax=ax)
         t0.append(tims[0])

@@ -158,7 +158,7 @@ def add_columns_Gaia(posterior_file,epoch,nKOs,maxNp,star_mass,star_mass_err,P_p
     #get mass of central star
     N = len(posterior_file)
     posterior_file['Mstar'] = np.random.randn(N)*star_mass_err + star_mass
-    Minterior = posterior_file['Mstar']
+    Minterior = posterior_file['Mstar'].copy()
 
     #epoch
     posterior_file['Epoch'] = np.ones(N)*epoch

@@ -227,7 +227,7 @@ def FIP_TIP(loc,maxNp,P_prior,dataspan):
 def calc_nump_variables(posterior_file,binary=True,loc=None):
     #calculate the Bayes' Factor for each number of planets relative to one less 
     #and therefore the number of planets that we are going to plot
-    maxNp = int(posterior_file['maxNp'][0])
+    maxNp = int(posterior_file['maxNp'].iloc[0])
     
     Bayes_factors = np.zeros(maxNp)
     Nps = np.zeros(maxNp+1)
@@ -345,7 +345,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
         MaxLiSolution['M_pri'] = CMR[0]
         if binary:
             MaxLiSolution['R_pri'] = CMR[1]
-            MaxLiSolution['M_sec'] = fcs.masses(SB2,float(MaxLiSolution['KO_K0']),float(MaxLiSolution['KO_P0']),float(MaxLiSolution['KO_ecc0']),q=1.0,M1=float(MaxLiSolution['M_pri']))[1]
+            MaxLiSolution['M_sec'] = fcs.masses(SB2,float(MaxLiSolution['KO_K0'].iloc[0]),float(MaxLiSolution['KO_P0'].iloc[0]),float(MaxLiSolution['KO_ecc0'].iloc[0]),q=1.0,M1=float(MaxLiSolution['M_pri'].iloc[0]))[1]
     
     #combine the columns for multiple planets into one for periodogram search
     columns_of_planetary_interest = ['P','K','phi','ecc','w','wdot','M_pl_','a_pl_','Tper']
@@ -438,14 +438,14 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
             primary.add_jitter(MaxLiSolution['jitter'+str(i+1)])
         primary.add_drift(drift_order,MaxLiSolution)
         if binary:
-            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri']),M1=float(MaxLiSolution['M_sec']),R0=float(MaxLiSolution['R_pri']))
+            primary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,M0=float(MaxLiSolution['M_pri'].iloc[0]),M1=float(MaxLiSolution['M_sec'].iloc[0]),R0=float(MaxLiSolution['R_pri'].iloc[0]))
             if studentT:
-                primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
+                primary.calc_stud_T_outliers(float(MaxLiSolution['nu'].iloc[0]))
             if SB2:
                 secondary = RV_planets(rvdata_sec,instruments[i],RV_units=units)
                 if len(datafiles)>=2 and i+1<len(datafiles):
                     secondary.add_offset(MaxLiSolution['offset_sec'+str(i+1)])
-                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0),M0=float(MaxLiSolution['M_sec']),M1=float(MaxLiSolution['M_pri']))
+                secondary.add_binary(binary_params,GR=GR,Tides=Tides,precession=precession,sb2=True,q=float(MaxLiSolution.KO_q0.iloc[0]),M0=float(MaxLiSolution['M_sec'].iloc[0]),M1=float(MaxLiSolution['M_pri'].iloc[0]))
                 secondary.add_planet(numpl,MaxLiSolution)
                 secondary.add_known_obj(nKOs,MaxLiSolution)
                 secondary.add_vsys(MaxLiSolution['vsys_sec'])
@@ -458,7 +458,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                     secondary.add_jitter(MaxLiSolution['jitter_sec'+str(i+1)])
                 secondary.add_drift(drift_order,MaxLiSolution)
                 if studentT:
-                    primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
+                    primary.calc_stud_T_outliers(float(MaxLiSolution['nu'].iloc[0]))
                 secondaries.append(secondary)
                 secondary.write_reses(outputloc+'datafiles/', system,prisec='_sec')
                 primary.write_reses(outputloc+'datafiles/', system,prisec='_pri')
@@ -466,7 +466,7 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
                 primary.write_reses(outputloc+'datafiles/', system)
         else:
             if studentT:
-                primary.calc_stud_T_outliers(float(MaxLiSolution['nu']))
+                primary.calc_stud_T_outliers(float(MaxLiSolution['nu'].iloc[0]))
             primary.write_reses(outputloc+'datafiles/', system)
         primaries.append(primary)
 
@@ -518,20 +518,20 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     params.append(['number of data',sum(numdats),nul,nul,nul,nul])
     params.append(['number of planets',numpl,nul,nul,nul,nul])
     vsyss = posteriors_single['vsys'][inds]
-    params.append(['vsys',np.round(float(MaxLiSolution['vsys']),8),np.round(np.percentile(vsyss,50),8),np.round(np.percentile(vsyss,84)-np.percentile(vsyss,50),8),np.round(np.percentile(vsyss,50)-np.percentile(vsyss,16),8),'m/s'])
+    params.append(['vsys',np.round(float(MaxLiSolution['vsys'].iloc[0]),8),np.round(np.percentile(vsyss,50),8),np.round(np.percentile(vsyss,84)-np.percentile(vsyss,50),8),np.round(np.percentile(vsyss,50)-np.percentile(vsyss,16),8),'m/s'])
     if SB2:
         vsys2s = posteriors_single['vsys_sec'][inds]
-        params.append(['vsys_sec',np.round(float(MaxLiSolution['vsys_sec']),1),np.round(np.percentile(vsys2s,50),8),np.round(np.percentile(vsys2s,84)-np.percentile(vsys2s,50),8),np.round(np.percentile(vsys2s,50)-np.percentile(vsys2s,16),8),'m/s'])
-    params.append(['reference epoch',round(float(MaxLiSolution['Epoch']),8),nul,nul,nul,'bjd'])
+        params.append(['vsys_sec',np.round(float(MaxLiSolution['vsys_sec'].iloc[0]),1),np.round(np.percentile(vsys2s,50),8),np.round(np.percentile(vsys2s,84)-np.percentile(vsys2s,50),8),np.round(np.percentile(vsys2s,50)-np.percentile(vsys2s,16),8),'m/s'])
+    params.append(['reference epoch',round(float(MaxLiSolution['Epoch'].iloc[0]),8),nul,nul,nul,'bjd'])
     params.append(['data timespan',round(dataspan),nul,nul,nul,'days'])
     for i,pri in enumerate(primaries):
         if i >=1:
             param = posteriors_single['offset'+str(i)][inds]
-            params.append(['offset',np.round(float(MaxLiSolution['offset'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
+            params.append(['offset',np.round(float(MaxLiSolution['offset'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
         if SB2:
             if i >=1:
                 param = posteriors_single['offset_sec'+str(i)][inds]
-                params.append(['offset_sec',np.round(float(MaxLiSolution['offset_sec'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
+                params.append(['offset_sec',np.round(float(MaxLiSolution['offset_sec'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
             sec = secondaries[i]
             merr2,rms2,jit2 = round(sec.mean_rv_err(),4),round(sec.rms(),4),round(sec.jitter,4)
         else:
@@ -543,88 +543,88 @@ def make_datasheets(system,outputloc,inputloc,datafiles,instruments,bis_fw=False
     drift = ['slope','quadr','cubic']
     for i in range(drift_order):
         param = posteriors_single[drift[i]][inds]
-        params.append(['drift_'+str(i+1),np.round(float(MaxLiSolution[drift[i]]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8)])
+        params.append(['drift_'+str(i+1),np.round(float(MaxLiSolution[drift[i]].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8)])
     for i in range(maxNp):
         params.append(['Bayes Factor '+str(i+1)+'/'+str(i),Bayes_factors[i],Bayes_factors_samps[i],nul,nul])
     if binary:
         params.append(['','Binary','','','',''])
         param = posteriors_single['M_pri'][inds]
-        params.append(['M_pri',np.round(float(MaxLiSolution['M_pri']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        params.append(['M_pri',np.round(float(MaxLiSolution['M_pri'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
         param = posteriors_single['M_sec'][inds]
-        params.append(['M_sec',np.round(float(MaxLiSolution['M_sec']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        params.append(['M_sec',np.round(float(MaxLiSolution['M_sec'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
         param = posteriors_single['KO_P0'][inds]
-        params.append(['P_obs',np.round(float(MaxLiSolution['KO_P0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
+        params.append(['P_obs',np.round(float(MaxLiSolution['KO_P0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
         param = posteriors_single['a_pri'][inds]
-        params.append(['a_pri',np.round(float(MaxLiSolution['a_pri']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
+        params.append(['a_pri',np.round(float(MaxLiSolution['a_pri'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['a_sec'][inds]
-        params.append(['a_sec',np.round(float(MaxLiSolution['a_sec']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
+        params.append(['a_sec',np.round(float(MaxLiSolution['a_sec'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['KO_K0'][inds]
-        params.append(['K',np.round(float(MaxLiSolution['KO_K0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
+        params.append(['K',np.round(float(MaxLiSolution['KO_K0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
         param = posteriors_single['KO_ecc0'][inds]
-        params.append(['e',np.round(float(MaxLiSolution['KO_ecc0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
+        params.append(['e',np.round(float(MaxLiSolution['KO_ecc0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
         param = posteriors_single['KO_w0'][inds]
-        params.append(['w',np.round(float(MaxLiSolution['KO_w0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['w',np.round(float(MaxLiSolution['KO_w0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['KO_phi0'][inds]
-        params.append(['phi_0',np.round(float(MaxLiSolution['KO_phi0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['phi_0',np.round(float(MaxLiSolution['KO_phi0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['Tper_bin'][inds]
-        params.append(['T_per',np.round(float(MaxLiSolution['Tper_bin']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
+        params.append(['T_per',np.round(float(MaxLiSolution['Tper_bin'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
         if primaries[0].Bin_precession == True:
             param = posteriors_single['KO_wdot0'][inds]
-            params.append(['w_dot',np.round(float(MaxLiSolution['KO_wdot0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'arcsec/yr'])
+            params.append(['w_dot',np.round(float(MaxLiSolution['KO_wdot0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'arcsec/yr'])
             param = posteriors_single['KO_Pano0'][inds]
-            params.append(['P_ano',np.round(float(MaxLiSolution['KO_Pano0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
+            params.append(['P_ano',np.round(float(MaxLiSolution['KO_Pano0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
         if SB2:
             param = posteriors_single['KO_q0'][inds]
-            params.append(['q',np.round(float(MaxLiSolution['KO_q0']),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
+            params.append(['q',np.round(float(MaxLiSolution['KO_q0'].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
     
     for i in range(nKOs):
         if binary:
             i+=1
         params.append(['','KO_'+str(i+1),'','','',''])
         param = posteriors_single['M_KO_'+str(i)][inds]
-        if float(MaxLiSolution['M_KO_'+str(i)]) > 0.08:
-            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        if float(MaxLiSolution['M_KO_'+str(i)].iloc[0]) > 0.08:
+            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
         else:
-            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
+            params.append(['M',np.round(float(MaxLiSolution['M_KO_'+str(i)].iloc[0]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
         param = posteriors_single['a_KO_'+str(i)][inds]
-        params.append(['a',np.round(float(MaxLiSolution['a_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
+        params.append(['a',np.round(float(MaxLiSolution['a_KO_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['KO_P'+str(i)][inds]
-        params.append(['P',np.round(float(MaxLiSolution['KO_P'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
+        params.append(['P',np.round(float(MaxLiSolution['KO_P'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
         param = posteriors_single['KO_K'+str(i)][inds]
-        params.append(['K',np.round(float(MaxLiSolution['KO_K'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
+        params.append(['K',np.round(float(MaxLiSolution['KO_K'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
         param = posteriors_single['KO_ecc'+str(i)][inds]
-        params.append(['e',np.round(float(MaxLiSolution['KO_ecc'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
+        params.append(['e',np.round(float(MaxLiSolution['KO_ecc'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
         param = posteriors_single['KO_w'+str(i)][inds]
-        params.append(['w',np.round(float(MaxLiSolution['KO_w'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['w',np.round(float(MaxLiSolution['KO_w'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['KO_phi'+str(i)][inds]
-        params.append(['phi_0',np.round(float(MaxLiSolution['KO_phi'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['phi_0',np.round(float(MaxLiSolution['KO_phi'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['KO_Tper'+str(i)][inds]
-        params.append(['T_per',np.round(float(MaxLiSolution['KO_Tper'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
+        params.append(['T_per',np.round(float(MaxLiSolution['KO_Tper'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
     for i in range(numpl):
         inds = indices[i]
         params.append(['','Planet_'+str(i+1),'','','',''])
         param = posteriors_single['M_pl_'][inds]
-        if float(MaxLiSolution['M_pl_'+str(i)]) > 0.08:
-            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
-        elif float(MaxLiSolution['M_pl_'+str(i)]) > 0.0001:
-            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
+        if float(MaxLiSolution['M_pl_'+str(i)].iloc[0]) > 0.08:
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+        elif float(MaxLiSolution['M_pl_'+str(i)].iloc[0]) > 0.0001:
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),8)*Ms/Mj,np.round(np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Mj,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Mj,'M_jup'])
         else:
-            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*Ms/Me,np.round(np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Me,'M_earth'])
+            params.append(['M',np.round(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),8)*Ms/Me,np.round(np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,84)-np.percentile(param,50),8)*Ms/Me,np.round(np.percentile(param,50)-np.percentile(param,16),8)*Ms/Me,'M_earth'])
 
         param = posteriors_single['a_pl_'][inds]
-        params.append(['a',np.round(float(MaxLiSolution['a_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
+        params.append(['a',np.round(float(MaxLiSolution['a_pl_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'AU'])
         param = posteriors_single['P'][inds]
-        params.append(['P',np.round(float(MaxLiSolution['P'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
+        params.append(['P',np.round(float(MaxLiSolution['P'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'days'])
         param = posteriors_single['K'][inds]
-        params.append(['K',np.round(float(MaxLiSolution['K'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
+        params.append(['K',np.round(float(MaxLiSolution['K'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'m/s'])
         param = posteriors_single['ecc'][inds]
-        params.append(['e',np.round(float(MaxLiSolution['ecc'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
+        params.append(['e',np.round(float(MaxLiSolution['ecc'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),''])
         param = posteriors_single['w'][inds]
-        params.append(['w',np.round(float(MaxLiSolution['w'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['w',np.round(float(MaxLiSolution['w'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['phi'][inds]
-        params.append(['phi_0',np.round(float(MaxLiSolution['phi'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
+        params.append(['phi_0',np.round(float(MaxLiSolution['phi'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'rad'])
         param = posteriors_single['Tper'][inds]
-        params.append(['T_per',np.round(float(MaxLiSolution['Tper'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
+        params.append(['T_per',np.round(float(MaxLiSolution['Tper'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'bjd'])
 
     
     parameters = pd.DataFrame(params,columns=param_columns)
@@ -789,13 +789,13 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     Chi_squared = np.round(np.sum((np.array(res_alscan)/np.array(data.w_err))**2),round_val)
     Chi_squared_red = np.round(np.sum((np.array(res_alscan)/np.array(data.w_err))**2)/deg_free,round_val)
 
-    ML_jitter = np.round(float(MaxLiSolution.jitter),round_val)
+    ML_jitter = np.round(float(MaxLiSolution.jitter.iloc[0]),round_val)
 
     noise_params = [Ndata,np.round(dataspan,round_val),ML_jitter,RMS,Median_err,Mean_err,Chi_squared,Chi_squared_red,fracscanbins,propinmax]
     noise_params_names = ['# of data = ','dataspan = ', 'MaxLi Jitter = ','Residual RMS = ','Median error = ','Mean error = ',r'$\chi^{2}$ = ',r'$\chi^{2}_{\nu}$ = ',r'Fraction of $\psi$ bins '+'\ncovered = ', r'Proportion of $\psi$ in '+'\nmaximum bin (of 20) = ']
     
     if studentT:
-        noise_params.append(float(MaxLiSolution.nu))
+        noise_params.append(float(MaxLiSolution.nu.iloc[0]))
         noise_params_names.append(r'student-t $\nu$ = ')
 
     ##############################################################################
@@ -804,12 +804,12 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     SNRs = []
     SNR_names = []
     for i in range(nKOs):
-        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar),float(MaxLiSolution['M_KO_'+str(i)]),float(MaxLiSolution['KO_P'+str(i)]),float(1000/MaxLiSolution.parallax),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
+        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar.iloc[0]),float(MaxLiSolution['M_KO_'+str(i)].iloc[0]),float(MaxLiSolution['KO_P'+str(i)].iloc[0]),float(1000/MaxLiSolution.parallax.iloc[0]),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
         SNRs.append(SNR)
         SNR_names.append('SNR_KO_'+str(i))
     
     for i in range(numpl):
-        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar),float(MaxLiSolution['M_pl_'+str(i)]),float(MaxLiSolution['P'+str(i)]),float(1000/MaxLiSolution.parallax),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
+        SNR = fcs.astrometric_SNR(float(MaxLiSolution.Mstar.iloc[0]),float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),float(MaxLiSolution['P'+str(i)].iloc[0]),float(1000/MaxLiSolution.parallax.iloc[0]),Beta=0,Nobs=Ndata,sigma=Median_err*1000)
         SNRs.append(SNR)
         SNR_names.append('SNR_pl_'+str(i))
 
@@ -844,7 +844,7 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     for i in range(nKOs):
         ML_param_cols += [columns_of_KO_interest[j]+str(i) for j in range(len(columns_of_KO_interest))]
         ML_param_names += [KO_param_names[j]+str(i) for j in range(len(KO_param_names))]
-        if float(MaxLiSolution['M_KO_'+str(i)]) < 0.06:
+        if float(MaxLiSolution['M_KO_'+str(i)].iloc[0]) < 0.06:
             value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,fcs.Msun/fcs.Mj,1.0,1.0,1.0]
             units_new = [' [days]',' [rad]',' ',' [mas]',' [rad]',' ',' [rad]',r' [$M_{\rm Jup}$]',' [AU]',' [deg]',' ']
             ML_param_units += units_new
@@ -856,7 +856,7 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     for i in range(numpl):
         ML_param_cols += [columns_of_planetary_interest[j]+str(i) for j in range(len(columns_of_planetary_interest))]
         ML_param_names += [planet_param_names[j]+str(i) for j in range(len(planet_param_names))]
-        if float(MaxLiSolution['M_pl_'+str(i)]) < 0.06:
+        if float(MaxLiSolution['M_pl_'+str(i)].iloc[0]) < 0.06:
             value_mult += [1.0,1.0,1.0,1.0,1.0,1.0,1.0,fcs.Msun/fcs.Mj,1.0,1.0,1.0]
             units_new = [' [days]',' [rad]',' ',' [mas]',' [rad]',' ',' [rad]',r' [$M_{\rm Jup}$]',' [AU]',' [deg]',' ']
             ML_param_units += units_new
@@ -870,7 +870,7 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     ##############################################################################
     mgd.make_baseline_sheet(system, outputloc, posteriors, len_posts, indices, indices_full, posteriors_np, posteriors_single, full_posteriors, nKOs, numpl, BFs_nps, fiptip, res, pykima_ML, MaxLiSolution, ML_param_names, ML_param_cols, ML_param_units, value_mult, dataspan, noise_params, noise_params_names, acceleration, jerk)
 
-    fap = mgd.make_extras_sheet(system,outputloc,posteriors,full_posteriors,indices_full,numpl,data_kepmodel_format,nKOs,star_mass,float(MaxLiSolution.parallax),dataspan,Gaia_epoch)
+    fap = mgd.make_extras_sheet(system,outputloc,posteriors,full_posteriors,indices_full,numpl,data_kepmodel_format,nKOs,star_mass,float(MaxLiSolution.parallax.iloc[0]),dataspan,Gaia_epoch)
 
     logZ = mgd.make_diagnostics_sheet(inputloc,outputloc,system)
 
@@ -950,10 +950,10 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
         params.append(['','Known-object_'+str(i),'','','',''])
         if KO_mass_islow[i]:
             param = posteriors['M_KO_'+str(i)]*fcs.Msun/fcs.Mj
-            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
+            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)].iloc[0]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
         else:
             param = posteriors['M_KO_'+str(i)]
-            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+            params.append(['KO_M'+str(i),np.round(float(MaxLiSolution['M_KO_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
         variable_list = ['KO_P'+str(i),'KO_phi'+str(i),'KO_ecc'+str(i),'KO_a'+str(i),'KO_w'+str(i), 'KO_cosi'+str(i),'KO_W'+str(i),'sma_KO_'+str(i),'KO_inc'+str(i),'KO_Tper'+str(i)]
         units_list = ['days','rad',nul,'mas','rad',nul,'rad','AU','deg',nul]
         for variable,units in zip(variable_list,units_list):
@@ -965,9 +965,9 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
         params.append(['','Planet_'+str(i),'','','',''])
         if pl_mass_islow[i]:
             param = posteriors_single['M_pl_'][inds]*fcs.Msun/fcs.Mj
-            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
+            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),8)*fcs.Msun/fcs.Mj,np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_Jup'])
         else:
-            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
+            params.append(['M'+str(i),np.round(float(MaxLiSolution['M_pl_'+str(i)].iloc[0]),8),np.round(np.percentile(param,50),8),np.round(np.percentile(param,84)-np.percentile(param,50),8),np.round(np.percentile(param,50)-np.percentile(param,16),8),'M_sun'])
         variable_list = ['P','phi','ecc','a','w', 'cosi','W','sma_pl_','inc','Tper']
         units_list = ['days','rad',nul,'mas','rad',nul,'rad','AU','deg',nul]
         for variable,units in zip(variable_list,units_list):
@@ -978,4 +978,4 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     parameters.to_csv(outputloc+system+'_5_parameters.csv', index=False)
 
 def add_parameter_row(params,MaxLiSolution,param,variable,units,dps=8):
-    params.append([variable,np.round(float(MaxLiSolution[variable]),dps),np.round(np.percentile(param,50),dps),np.round(np.percentile(param,84)-np.percentile(param,50),dps),np.round(np.percentile(param,50)-np.percentile(param,16),dps),units])
+    params.append([variable,np.round(float(MaxLiSolution[variable].iloc[0]),dps),np.round(np.percentile(param,50),dps),np.round(np.percentile(param,84)-np.percentile(param,50),dps),np.round(np.percentile(param,50)-np.percentile(param,16),dps),units])
