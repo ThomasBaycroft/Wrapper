@@ -665,6 +665,9 @@ def get_percentile(x,y,bins,percentile=99,log=False):
             
     return bincentres, percs
 
+def make_rvgaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT=False,enfnp=0.1,P_prior=[10,5000],model=None,res=None,acceleration=False,jerk=False,scan_dep_signal=False,n_scan_dep_components=0,star_mass=1.0,Gaia_epoch=2457936.875):
+    make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter,studentT,enfnp,P_prior,model,res,acceleration,jerk,scan_dep_signal,n_scan_dep_components,star_mass,Gaia_epoch)
+
 
 def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT=False,enfnp=0.1,P_prior=[10,5000],model=None,res=None,acceleration=False,jerk=False,scan_dep_signal=False,n_scan_dep_components=0,star_mass=1.0,Gaia_epoch=2457936.875):
     loc = inputloc
