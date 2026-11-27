@@ -937,7 +937,7 @@ def make_gaia_datasheets(system,outputloc,inputloc,datafile,Jitter=True,studentT
     if scan_dep_signal:
         params.append(['','scan-dependent signal','','','',''])
         for i in range(n_scan_dep_components):
-            variable = 'A'+str(2*i +3)
+            variable = 'Amp'+str(2*i +3)
             units = 'mas'
             param = posteriors[variable]
             add_parameter_row(params,MaxLiSolution,param,variable,units)
