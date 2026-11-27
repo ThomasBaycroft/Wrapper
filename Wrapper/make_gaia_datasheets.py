@@ -116,8 +116,19 @@ def make_baseline_sheet(system, outputloc, posteriors, len_posts, indices, indic
     rems.append(outputloc+system+'_'+str(1)+'_main_temp.pdf')
 
     plt.close('all')
+
+    if res.M0_epoch == 57936.875:
+        date_sub = 2400000
+        dates = 'bjd'
+    elif res.M0_epoch == 57936.375:
+        dates = 'mjd'
+        date_sub = 0
+    else:
+        date_sub = 0
+        dates = 'bjd'
+
     if res is not None:
-        res.phase_plot(pykima_ML)
+        res.phase_plot(pykima_ML,dates=dates,date_sub=date_sub)
         plt.savefig(outputloc+system+'_'+str(1)+'_phase.pdf')
         plt.close('all')
         pdf_merger.append(outputloc+system+'_'+str(1)+'_phase.pdf')
